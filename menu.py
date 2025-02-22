@@ -18,16 +18,18 @@ class MainMenu:
         self.load_music()
         self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on.png'), (50, 50))  # Load and scale music on icon
         self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off.png'), (50, 50))  # Load and scale music off icon
+        self.background_image = pygame.image.load('assets/pokemon/gastly2.png')
+        #! self.background_image = pygame.transform.scale(self.background_image, (800, 800))
+        self.background_rect = self.background_image.get_rect(center=(400, 400))
 
     def load_assets(self):
-        # Load images
         self.images = {
-            "space_invaders": pygame.image.load('assets/space_invaders/space_invaders.png'),
-            "snake": pygame.image.load('assets/snake/snake.jpg'),
-            "tetris": pygame.image.load('assets/tetris/tetris.jpg'),
-            "tank": pygame.image.load('assets/tank/tank.jpg'),
-            "contra": pygame.image.load('assets/contra/contra.jpg'),
-            "pokemon": pygame.image.load('assets/pokemon/gastly_evolution.jpeg'),
+            "space_invaders": pygame.image.load('assets/space_invaders/space_invaders2.png'),
+            "snake": pygame.image.load('assets/snake/slytherin.gif'),
+            "tetris": pygame.image.load('assets/tetris/tetris.png'),
+            "tank": pygame.image.load('assets/tank/tank.png'),
+            "contra": pygame.image.load('assets/contra/contra.png'),
+            "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }
@@ -42,7 +44,12 @@ class MainMenu:
 
     def run(self):
         while self.running:
-            self.screen.fill((255, 255, 255))
+            self.screen.fill((0, 0, 0))  # Fill the screen with black
+            self.screen.blit(self.background_image, self.background_rect)  # Draw centered background image
+            transparent_surface = pygame.Surface((800, 800), pygame.SRCALPHA)
+            transparent_surface.fill((255, 255, 255, 128))  # Fill with white and 50% transparency
+            #! self.screen.blit(self.background_image, (0, 0))  # Draw background image
+            self.screen.blit(transparent_surface, (0, 0))  # Draw transparent overlay
             self.draw_menu()
             self.handle_events()
 
@@ -60,8 +67,8 @@ class MainMenu:
         for key, pos in positions.items():
             if self.hovered_image == key:
                 # Draw a highlighted version of the image (e.g., slightly larger or with a border)
-                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 10, self.image_size[1] + 10))
-                self.screen.blit(highlighted_image, (pos[0] - 5, pos[1] - 5))  # Draw with offset
+                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 15, self.image_size[1] + 15))  # Increased size for hover effect
+                self.screen.blit(highlighted_image, (pos[0] - 7, pos[1] - 7))  # Draw with offset
             else:
                 self.screen.blit(self.images[key], pos)
 

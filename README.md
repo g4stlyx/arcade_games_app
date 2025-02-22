@@ -9,5 +9,6 @@ TODO:
     * contra
     * tetris
     * tank
+    * pacman
     * pokemon 
         * can be a seperate bigger game (something like a mini pokemon vortex maybe)
