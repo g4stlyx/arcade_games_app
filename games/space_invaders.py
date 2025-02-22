@@ -8,13 +8,19 @@ class SpaceInvaders:
         self.running = True
         self.clock = pygame.time.Clock()
         self.player_image = pygame.image.load('assets/space_invaders/player.gif')
-        self.invader_image = pygame.image.load('assets/space_invaders/invader.gif')
-        self.background_image = pygame.image.load('assets/space_invaders/space_invaders_background.png')
+        self.invader_images = [
+            pygame.image.load('assets/space_invaders/invader.gif'),
+            pygame.image.load('assets/space_invaders/alien2.png'),
+            pygame.image.load('assets/space_invaders/alien3.png'),
+            pygame.image.load('assets/space_invaders/alien4.png')
+        ]
+        self.bullet_image = pygame.image.load('assets/space_invaders/blasterbolt.png')
+        self.background_image = pygame.image.load('assets/space_invaders/space2.jpg')
         self.laser_sound = pygame.mixer.Sound('assets/space_invaders/laser.wav')
         self.explosion_sound = pygame.mixer.Sound('assets/space_invaders/explosion.wav')
 
-        self.player_pos = [375, 650]  # Player starting position
-        self.invaders = [[random.randint(0, 750), random.randint(100, 150)] for _ in range(5)]  # Random invader positions
+        self.player_pos = [375, 650]
+        self.invaders = [[random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)] for _ in range(5)]  # Random invader positions with random images
         self.lasers = []  # List to hold lasers
         self.score = 0
         self.high_score = 0  # Track highest score
@@ -47,7 +53,7 @@ class SpaceInvaders:
             self.shoot_bullet()
 
     def shoot_bullet(self):
-        bullet_pos = [self.player_pos[0] + 25, self.player_pos[1] - 10]
+        bullet_pos = [self.player_pos[0] + (self.player_image.get_width() // 2) - (self.bullet_image.get_width() // 2), self.player_pos[1] - 10]  # Center bullet above player
         self.lasers.append(bullet_pos)
         self.laser_sound.play()
         self.bullet_ready = False  # Set bullet to not ready until it is fired
@@ -80,7 +86,7 @@ class SpaceInvaders:
                     self.explosion_sound.play()
                     self.bullet_ready = True
                     # Respawn the invader immediately
-                    self.invaders.append([random.randint(0, 750), random.randint(100, 150)])
+                    self.invaders.append([random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)])
                     self.check_level_up()
                     break
 
@@ -96,7 +102,7 @@ class SpaceInvaders:
             if self.level < self.max_level:
                 self.level += 1
                 self.invader_speed += 1  # Increase invader speed
-                self.invaders.append([random.randint(0, 750), random.randint(100, 150)])  # Add an extra invader
+                self.invaders.append([random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)])  # Add an extra invader with random image
                 print(f"Level Up! Current Level: {self.level}")
 
     def game_over(self):
@@ -147,7 +153,7 @@ class SpaceInvaders:
 
     def reset_game(self):
         self.player_pos = [375, 450]
-        self.invaders = [[random.randint(0, 750), random.randint(100, 150)] for _ in range(5)]
+        self.invaders = [[random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)] for _ in range(5)] 
         self.lasers = [] 
         self.score = 0
         self.bullet_ready = True
@@ -163,21 +169,20 @@ class SpaceInvaders:
 
         # invaders
         for invader in self.invaders:
-            self.screen.blit(self.invader_image, tuple(invader))
+            self.screen.blit(invader[2], (invader[0], invader[1]))  # Draw invader using the selected image
 
         # bullets
         for bullet in self.lasers:
-            pygame.draw.rect(self.screen, (255, 0, 0), (bullet[0], bullet[1], 5, 10))  # bullet as a rectangle
-            # TODO: laser image instead of "rectangle bullet"
+            self.screen.blit(self.bullet_image, (bullet[0], bullet[1])) 
 
         # score and level
         font = pygame.font.Font(None, 36)
-        score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
-        level_text = font.render(f'Level: {self.level}', True, (255, 255, 255))
+        score_text = font.render(f'Score: {self.score}', True, (28, 237, 28))
+        level_text = font.render(f'Level: {self.level}', True, (28, 237, 28))
         elapsed_time = time.time() - self.start_time
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
-        timer_text = font.render(f'Time: {minutes:02}:{seconds:02}', True, (255, 255, 255))
+        timer_text = font.render(f'Time: {minutes:02}:{seconds:02}', True, (28, 237, 28))
 
         # score, level, timer info
         margin = 20

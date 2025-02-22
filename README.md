@@ -2,7 +2,6 @@
 
 TODO:
     * space_invaders:
-        * better assets (bg, invader, player, bullet, sounds)
         * sound off option
         * maybe leaving values of #enemies, enemy_speed etc. to the user.
     * snake

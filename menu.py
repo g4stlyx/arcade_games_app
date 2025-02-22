@@ -20,7 +20,7 @@ class MainMenu:
 
     def draw_menu(self):
         # Draw game images and exit button
-        space_invaders_image = pygame.image.load('assets/space_invaders/space_invaders_background.png')
+        space_invaders_image = pygame.image.load('assets/space_invaders/space.png')
         snake_image = pygame.image.load('assets/joker.jpeg')
         tetris_image = pygame.image.load('assets/homelander.jpeg')
         tank_image = pygame.image.load('assets/darth_vader.png')
