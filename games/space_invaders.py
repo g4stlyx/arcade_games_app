@@ -18,6 +18,7 @@ class SpaceInvaders:
         self.background_image = pygame.image.load('assets/space_invaders/space2.jpg')
         self.laser_sound = pygame.mixer.Sound('assets/space_invaders/laser.wav')
         self.explosion_sound = pygame.mixer.Sound('assets/space_invaders/explosion.wav')
+        self.level_up_sound = pygame.mixer.Sound('assets/space_invaders/level_up_space.wav')
 
         self.player_pos = [375, 650]
         self.invaders = [[random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)] for _ in range(5)]  # Random invader positions with random images
@@ -42,7 +43,7 @@ class SpaceInvaders:
         # Load and play background music
         pygame.mixer.music.load('assets\sound_effects\menu\9. Space Debris.wav')
         pygame.mixer.music.set_volume(self.volume)  # Set initial volume
-        pygame.mixer.music.play(-1)  # Play music in a loop
+        pygame.mixer.music.play(-1) # Play music in a loop
 
     def run(self):
         while self.running:
@@ -143,12 +144,36 @@ class SpaceInvaders:
                 self.level += 1
                 self.invader_speed += 1
                 self.invaders.append([random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)])  # Add an extra invader with random image
+                self.level_up_sound.play()
+                self.show_level_up_message()
                 print(f"Level Up! Current Level: {self.level}")
 
+    def show_level_up_message(self):
+        font = pygame.font.Font(None, 48)  # Create a font object
+        text_surface = font.render(f"Level Up! Now at Level {self.level}", True, (255, 255, 0))  # Render the text
+        text_rect = text_surface.get_rect(center=(400, 300))  # Center the text horizontally
+        self.screen.blit(text_surface, text_rect)  # Position the text on the screen
+        pygame.display.flip()  # Update the display
+        pygame.time.delay(2000)  # Show the message for 2 seconds
+
     def game_over(self):
+        self.play_game_over_sound()
+        self.show_game_over_reason()
         if self.score > self.high_score:
             self.high_score = self.score  # Update high score if current score is higher
         self.show_game_over_screen()
+
+    def show_game_over_reason(self):
+        font = pygame.font.Font(None, 48)  # Create a font object
+        text_surface = font.render("Game Over! Invaders reached your base!", True, (255, 0, 0))  # Render the text
+        text_rect = text_surface.get_rect(center=(400, 300))  # Center the text horizontally
+        self.screen.blit(text_surface, text_rect)  # Position the text on the screen
+        pygame.display.flip()  # Update the display
+        pygame.time.delay(2000)  # Show the message for 2 seconds
+
+    def play_game_over_sound(self):
+        game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')
+        game_over_sound.play()
 
     def show_game_over_screen(self):
         while True:
