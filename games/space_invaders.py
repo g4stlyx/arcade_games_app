@@ -152,7 +152,7 @@ class SpaceInvaders:
                         return
 
     def reset_game(self):
-        self.player_pos = [375, 450]
+        self.player_pos = [375, 650]
         self.invaders = [[random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)] for _ in range(5)] 
         self.lasers = [] 
         self.score = 0

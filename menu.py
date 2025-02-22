@@ -10,22 +10,22 @@ class MainMenu:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
-        self.image_size = (150, 150)  # Set desired image size (width, height)
+        self.image_size = (200, 200)  # images (works like buttons) sizes
 
     def run(self):
         while self.running:
-            self.screen.fill((255, 255, 255))  # Clear screen
+            self.screen.fill((60, 70, 80))
             self.draw_menu()
             self.handle_events()
 
     def draw_menu(self):
         # Draw game images and exit button
-        space_invaders_image = pygame.image.load('assets/space_invaders/space.png')
-        snake_image = pygame.image.load('assets/joker.jpeg')
-        tetris_image = pygame.image.load('assets/homelander.jpeg')
-        tank_image = pygame.image.load('assets/darth_vader.png')
-        contra_image = pygame.image.load('assets/hetfield.jpg')
-        pokemon_image = pygame.image.load('assets/gengar.jpg')
+        space_invaders_image = pygame.image.load('assets/space_invaders/space_invaders.png')
+        snake_image = pygame.image.load('assets/snake/snake.jpg')
+        tetris_image = pygame.image.load('assets/tetris/tetris.jpg')
+        tank_image = pygame.image.load('assets/tank/tank.jpg')
+        contra_image = pygame.image.load('assets/contra/contra.jpg')
+        pokemon_image = pygame.image.load('assets/pokemon/gastly_evolution.jpeg')
 
         # Resize images
         space_invaders_image = pygame.transform.scale(space_invaders_image, self.image_size)
@@ -37,11 +37,11 @@ class MainMenu:
 
         # Blit images onto the screen
         self.screen.blit(space_invaders_image, (100, 50))
-        self.screen.blit(snake_image, (100, 220))
-        self.screen.blit(tetris_image, (100, 390))
-        self.screen.blit(tank_image, (400, 390))
-        self.screen.blit(contra_image, (400, 50))
-        self.screen.blit(pokemon_image, (400, 220))
+        self.screen.blit(snake_image, (100, 270))
+        self.screen.blit(tetris_image, (100, 490))
+        self.screen.blit(contra_image, (500, 50))
+        self.screen.blit(pokemon_image, (500, 270))
+        self.screen.blit(tank_image, (500, 490))
 
         pygame.display.flip()
 
@@ -51,22 +51,21 @@ class MainMenu:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
-                if 100 <= pos[0] <= 250:
-                    if 50 <= pos[1] <= 200:
+                if 100 <= pos[0] <= 300:
+                    if 50 <= pos[1] <= 250:
                         self.start_game(SpaceInvaders)
-                    elif 220 <= pos[1] <= 370:
+                    elif 270 <= pos[1] <= 470:
                         self.start_game(Snake)
-                    elif 390 <= pos[1] <= 540:
+                    elif 490 <= pos[1] <= 690:
                         self.start_game(Tetris)
-                elif 400 <= pos[0] <= 550:
-                    if 50 <= pos[1] <= 200:
+                elif 500 <= pos[0] <= 700:
+                    if 50 <= pos[1] <= 250:
                         self.start_game(Contra)
-                    elif 220 <= pos[1] <= 370:
+                    elif 270 <= pos[1] <= 470:
                         self.start_game(Pokemon)
-                    elif 390 <= pos[1] <= 540:
+                    elif 490 <= pos[1] <= 690:
                         self.start_game(Tank)
 
-                       
     def start_game(self, game_class):
         game_instance = game_class(self.screen)
         game_instance.run()
