@@ -7,7 +7,7 @@ class SpaceInvaders:
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-        self.player_image = pygame.image.load('assets/space_invaders/player.gif')
+        self.player_image = pygame.image.load('assets/space_invaders/ship1.png')
         self.invader_images = [
             pygame.image.load('assets/space_invaders/invader.gif'),
             pygame.image.load('assets/space_invaders/alien2.png'),

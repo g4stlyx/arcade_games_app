@@ -2,8 +2,8 @@
 
 TODO:
     * space_invaders:
-        * sound off option
-        * maybe leaving values of #enemies, enemy_speed etc. to the user.
+        * better images/sound effects
+        * maybe leaving values of #enemies, enemy_speed etc. to the user. (config file)
     * snake
     * contra
     * tetris
