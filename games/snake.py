@@ -15,6 +15,12 @@ class Snake:
         self.paused = False
         self.elapsed_time = 0  # Track elapsed time
         self.pause_start_time = 0  # Track when the game was paused
+        self.load_high_score()  # Load high score from file
+        self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')  # Load game over sound
+        self.apple_image = pygame.image.load('assets/snake/apple.png')  # Load apple image
+        self.snake_head_image = pygame.image.load('assets/snake/snake_head2_16x16.png')  # Load snake head image
+        self.snake_body_image = pygame.image.load('assets/snake/snake_body_16x16.png')  # Load snake body image
+        self.snake_tail_image = pygame.image.load('assets/snake/snake_tail.png')  # Load snake tail image
 
     def run(self):
         while self.running:
@@ -73,9 +79,28 @@ class Snake:
 
     def draw(self):
         self.screen.fill((0, 0, 0))  # Clear screen
-        for pos in self.snake_pos:
-            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(pos[0], pos[1], 10, 10))  # Draw snake
-        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food_pos[0], self.food_pos[1], 10, 10))  # Draw food
+        #! background
+        #background = pygame.image.load('background.png')  # Load background image
+        #self.screen.blit(background, (0, 0))  # Draw background
+        #! snake created using green square pieces
+        #for pos in self.snake_pos:
+            #pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(pos[0], pos[1], 10, 10))  # Draw snake
+            #self.screen.blit(self.snake_image, (pos[0], pos[1]))  # Draw snake using image
+        #! snake created using head, tail, and body parts
+        if self.snake_pos:
+            #* head
+            self.screen.blit(self.snake_head_image, (self.snake_pos[0][0], self.snake_pos[0][1]))  # Draw head
+            #* body segments using images
+            # for pos in self.snake_pos[1:-1]:
+            #     self.screen.blit(self.snake_body_image, (pos[0], pos[1]))
+            #* body using green squares
+            for pos in self.snake_pos[1:-1]:
+                pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(pos[0], pos[1], 10, 10))  # Draw body as green squares
+            #*tail
+            if len(self.snake_pos) > 1:
+                self.screen.blit(self.snake_tail_image, (self.snake_pos[-1][0], self.snake_pos[-1][1]))  # Draw tail
+        #! fruits
+        self.screen.blit(self.apple_image, (self.food_pos[0], self.food_pos[1]))  # Draw apple using image
         
         # Display score and timer
         self.display_score_and_timer()
@@ -100,6 +125,7 @@ class Snake:
                                         self.screen.get_height() // 2 - paused_text.get_height() // 2))
 
     def game_over(self):
+        self.game_over_sound.play()  # Play game over sound
         self.running = False  # End the game
         self.game_over_menu()  # Show the game over menu
 
@@ -137,6 +163,8 @@ class Snake:
                         pygame.quit()
                         return
 
+            self.update_high_score()  # Update high score if necessary
+
     def restart_game(self):
         self.snake_pos = [[100, 50], [90, 50], [80, 50]]  # Reset snake position
         self.snake_direction = 'RIGHT'  # Reset direction
@@ -154,3 +182,16 @@ class Snake:
         else:
             self.paused = True
             self.pause_start_time = pygame.time.get_ticks()  # Record the time when paused
+
+    def load_high_score(self):
+        try:
+            with open('assets/snake/high_score_snake.txt', 'r') as f:
+                self.high_score = int(f.read())
+        except (FileNotFoundError, ValueError):
+            self.high_score = 0  # Default high score if file not found or invalid
+
+    def update_high_score(self):
+        if self.score > self.high_score:
+            self.high_score = self.score
+            with open('assets/snake/high_score_snake.txt', 'w') as f:
+                f.write(str(self.high_score))  # Save new high score to file
