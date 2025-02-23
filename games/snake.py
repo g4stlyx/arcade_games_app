@@ -13,12 +13,15 @@ class Snake:
         self.high_score = 0
         self.start_time = pygame.time.get_ticks()  # Timer start
         self.paused = False
+        self.elapsed_time = 0  # Track elapsed time
+        self.pause_start_time = 0  # Track when the game was paused
 
     def run(self):
         while self.running:
             self.handle_events()
             if not self.paused:
                 self.update()
+                self.elapsed_time = (pygame.time.get_ticks() - self.start_time) // 1000  # Update elapsed time
             self.draw()
             pygame.time.delay(100)  # Control the speed of the game
 
@@ -36,7 +39,7 @@ class Snake:
                 elif event.key == pygame.K_RIGHT and self.snake_direction != 'LEFT':
                     self.snake_direction = 'RIGHT'
                 elif event.key == pygame.K_p:  # Pause the game
-                    self.paused = not self.paused
+                    self.toggle_pause()
 
     def update(self):
         if not self.paused:  # Only update if not paused
@@ -86,7 +89,7 @@ class Snake:
     def display_score_and_timer(self):
         font = pygame.font.Font(None, 36)
         score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
-        timer_text = font.render(f'Time: {(pygame.time.get_ticks() - self.start_time) // 1000}', True, (255, 255, 255))
+        timer_text = font.render(f'Time: {self.elapsed_time}', True, (255, 255, 255))  # Use elapsed_time
         self.screen.blit(score_text, (10, 10))  # Score at top left
         self.screen.blit(timer_text, (10, 40))  # Timer below score
 
@@ -142,3 +145,12 @@ class Snake:
         self.score = 0
         self.start_time = pygame.time.get_ticks()  # Reset timer
         self.running = True
+
+    def toggle_pause(self):
+        if self.paused:
+            self.paused = False
+            # Reset the start time to account for the time spent paused
+            self.start_time += (pygame.time.get_ticks() - self.pause_start_time)
+        else:
+            self.paused = True
+            self.pause_start_time = pygame.time.get_ticks()  # Record the time when paused

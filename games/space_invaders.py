@@ -31,6 +31,7 @@ class SpaceInvaders:
         self.game_over_threshold = 50  # Threshold for game over condition
         self.level = 1  # Current level
         self.max_level = 5  # Maximum level
+        self.elapsed_time = 0  # Total elapsed time
         self.start_time = time.time()  # Start time for the timer
         self.volume = 0.5  # Default volume level
         self.music_playing = True  # Track if music is playing
@@ -39,6 +40,7 @@ class SpaceInvaders:
         self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off_white.png'), (50, 50))  # Load and scale music off icon
         self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), (50, 50))  # Load and scale sound effects on icon
         self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), (50, 50))  # Load and scale sound effects off icon
+        self.paused = False  # Track if the game is paused
 
         # Load and play background music
         pygame.mixer.music.load('assets\sound_effects\menu\9. Space Debris.wav')
@@ -48,7 +50,9 @@ class SpaceInvaders:
     def run(self):
         while self.running:
             self.handle_events()
-            self.update()
+            if not self.paused:  # Only update if not paused
+                self.update()  # Update game state
+                self.elapsed_time = time.time() - self.start_time  # Update elapsed time only when not paused
             self.draw()
             self.clock.tick(60)  # Limit to 60 frames per second
 
@@ -63,6 +67,15 @@ class SpaceInvaders:
                         self.toggle_music()
                     elif 750 <= mouse_pos[0] <= 790 and 60 <= mouse_pos[1] <= 100:  # Check if mute/unmute sound effects button is clicked
                         self.toggle_sound_effects()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:  # Toggle pause with 'P' key
+                    if self.paused:
+                        # Resume: Adjust start time to account for pause duration
+                        self.start_time = time.time() - self.elapsed_time
+                    else:
+                        # Pause: Just stop updating elapsed time
+                        self.elapsed_time = time.time() - self.start_time
+                    self.paused = not self.paused
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and self.player_pos[0] > 0:
@@ -99,42 +112,43 @@ class SpaceInvaders:
         self.bullet_ready = False
 
     def update(self):
-        # Move bullets
-        for bullet in self.lasers:
-            bullet[1] -= 10
-            if bullet[1] < 0:  # Bullet goes off screen
-                self.lasers.remove(bullet)
-                self.bullet_ready = True
-
-        # Move invaders
-        for invader in self.invaders:
-            invader[0] += self.invader_direction * self.invader_speed
-
-        # Check for invader boundaries
-        if any(invader[0] <= 0 for invader in self.invaders) or any(invader[0] >= 750 for invader in self.invaders):
-            self.invader_direction *= -1  # Change direction
-            for invader in self.invaders:
-                invader[1] += 10  # Move down
-
-        # Check for collisions
-        for bullet in self.lasers:
-            for invader in self.invaders:
-                if (invader[0] < bullet[0] < invader[0] + 50) and (invader[1] < bullet[1] < invader[1] + 50):
-                    self.invaders.remove(invader)
+        if not self.paused:  # Only update the timer if not paused
+            # Move bullets
+            for bullet in self.lasers:
+                bullet[1] -= 10
+                if bullet[1] < 0:  # Bullet goes off screen
                     self.lasers.remove(bullet)
-                    self.score += 1
-                    if self.sound_effects_playing:
-                        self.explosion_sound.play()
                     self.bullet_ready = True
-                    # Respawn the invader immediately
-                    self.invaders.append([random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)])
-                    self.check_level_up()
-                    break
 
-        # Check for game over condition
-        for invader in self.invaders:
-            if invader[1] >= self.player_pos[1] - self.game_over_threshold:  # If any invader is close to player height
-                self.game_over()
+            # Move invaders
+            for invader in self.invaders:
+                invader[0] += self.invader_direction * self.invader_speed
+
+            # Check for invader boundaries
+            if any(invader[0] <= 0 for invader in self.invaders) or any(invader[0] >= 750 for invader in self.invaders):
+                self.invader_direction *= -1  # Change direction
+                for invader in self.invaders:
+                    invader[1] += 10  # Move down
+
+            # Check for collisions
+            for bullet in self.lasers:
+                for invader in self.invaders:
+                    if (invader[0] < bullet[0] < invader[0] + 50) and (invader[1] < bullet[1] < invader[1] + 50):
+                        self.invaders.remove(invader)
+                        self.lasers.remove(bullet)
+                        self.score += 1
+                        if self.sound_effects_playing:
+                            self.explosion_sound.play()
+                        self.bullet_ready = True
+                        # Respawn the invader immediately
+                        self.invaders.append([random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)])
+                        self.check_level_up()
+                        break
+
+            # Check for game over condition
+            for invader in self.invaders:
+                if invader[1] >= self.player_pos[1] - self.game_over_threshold:  # If any invader is close to player height
+                    self.game_over()
 
     def check_level_up(self):
         # Level up based on score or time
@@ -244,7 +258,7 @@ class SpaceInvaders:
         font = pygame.font.Font(None, 36)
         score_text = font.render(f'Score: {self.score}', True, (28, 237, 28))
         level_text = font.render(f'Level: {self.level}', True, (28, 237, 28))
-        elapsed_time = time.time() - self.start_time
+        elapsed_time = self.elapsed_time if self.paused else time.time() - self.start_time
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
         timer_text = font.render(f'Time: {minutes:02}:{seconds:02}', True, (28, 237, 28))
@@ -262,5 +276,11 @@ class SpaceInvaders:
         # Draw mute/unmute sound effects button
         sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
         self.screen.blit(sfx_icon, (750, 60))  # Draw sound effects icon
+
+        if self.paused:  # Show pause message
+            font = pygame.font.Font(None, 74)
+            pause_text = font.render("PAUSED, press P to continue", True, (255, 255, 0))
+            text_rect = pause_text.get_rect(center=(400, 300))  # Center the text
+            self.screen.blit(pause_text, text_rect)  # Position the text on the screen
 
         pygame.display.flip()
