@@ -2,7 +2,6 @@
 
 TODO:
 * space_invaders:
-    * storing high scores on file and loading when game is started
     * better images/sound effects
     * maybe leaving values of #enemies, enemy_speed etc. to the user. (config file)
 * snake
@@ -12,6 +11,7 @@ TODO:
 * pacman
 * tank
 * tetris
+* flappy_bird
 * contra
 * pokemon 
     * can be a seperate bigger game (something like a mini pokemon vortex maybe)

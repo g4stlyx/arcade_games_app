@@ -1,5 +1,6 @@
 import pygame
 import random
+from high_score_manager import load_high_scores, update_high_score
 
 class Snake:
     def __init__(self, screen):
@@ -10,12 +11,12 @@ class Snake:
         self.food_pos = [random.randrange(1, (self.screen.get_width() // 10)) * 10,
                          random.randrange(1, (self.screen.get_height() // 10)) * 10]  # Random food position
         self.score = 0
-        self.high_score = 0
+        self.high_scores = load_high_scores()  # Load all high scores
+        self.high_score = self.high_scores.get('snake', 0)  # Get high score for this game
         self.start_time = pygame.time.get_ticks()  # Timer start
         self.paused = False
         self.elapsed_time = 0  # Track elapsed time
         self.pause_start_time = 0  # Track when the game was paused
-        self.load_high_score()  # Load high score from file
         self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')  # Load game over sound
         self.apple_image = pygame.image.load('assets/snake/apple.png')  # Load apple image
         self.snake_head_image = pygame.image.load('assets/snake/snake_head2_16x16.png')  # Load snake head image
@@ -127,7 +128,8 @@ class Snake:
     def game_over(self):
         self.game_over_sound.play()  # Play game over sound
         self.running = False  # End the game
-        self.game_over_menu()  # Show the game over menu
+        self.high_score = update_high_score('snake', self.score)  # Update high score if current score is higher
+        self.game_over_menu()
 
     def game_over_menu(self):
         # Game Over Menu
@@ -163,8 +165,6 @@ class Snake:
                         pygame.quit()
                         return
 
-            self.update_high_score()  # Update high score if necessary
-
     def restart_game(self):
         self.snake_pos = [[100, 50], [90, 50], [80, 50]]  # Reset snake position
         self.snake_direction = 'RIGHT'  # Reset direction
@@ -182,16 +182,3 @@ class Snake:
         else:
             self.paused = True
             self.pause_start_time = pygame.time.get_ticks()  # Record the time when paused
-
-    def load_high_score(self):
-        try:
-            with open('assets/snake/high_score_snake.txt', 'r') as f:
-                self.high_score = int(f.read())
-        except (FileNotFoundError, ValueError):
-            self.high_score = 0  # Default high score if file not found or invalid
-
-    def update_high_score(self):
-        if self.score > self.high_score:
-            self.high_score = self.score
-            with open('assets/snake/high_score_snake.txt', 'w') as f:
-                f.write(str(self.high_score))  # Save new high score to file

@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+from high_score_manager import load_high_scores, update_high_score
 
 class SpaceInvaders:
     def __init__(self, screen):
@@ -24,7 +25,8 @@ class SpaceInvaders:
         self.invaders = [[random.randint(0, 750), random.randint(100, 150), random.choice(self.invader_images)] for _ in range(5)]  # Random invader positions with random images
         self.lasers = []  # List to hold lasers
         self.score = 0
-        self.high_score = 0  # Track highest score
+        self.high_scores = load_high_scores()  # Load all high scores
+        self.high_score = self.high_scores.get('space_invaders', 0)  # Get high score for this game
         self.invader_direction = 1  # 1 for right, -1 for left
         self.invader_speed = 2  # Speed of invaders
         self.bullet_ready = True  # Bullet shooting logic
@@ -173,8 +175,7 @@ class SpaceInvaders:
     def game_over(self):
         self.play_game_over_sound()
         self.show_game_over_reason()
-        if self.score > self.high_score:
-            self.high_score = self.score  # Update high score if current score is higher
+        self.high_score = update_high_score('space_invaders', self.score)  # Update high score if current score is higher
         self.show_game_over_screen()
 
     def show_game_over_reason(self):
