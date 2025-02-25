@@ -1,4 +1,5 @@
 import pygame
+from games.pacman import PacMan
 from games.space_invaders import SpaceInvaders
 from games.snake import Snake
 from games.tetris import Tetris
@@ -7,10 +8,10 @@ from games.contra import Contra
 from games.pokemon import Pokemon
 
 class MainMenu:
-    def __init__(self, screen):
+    def __init__(self, screen, screen_size=(800, 800)):
         self.screen = screen
+        self.set_screen_size(screen_size)  # Set the screen size
         self.running = True
-        self.image_size = (200, 200)  # Set desired image size (width, height)
         self.hovered_image = None  # Track which image is hovered
         self.volume = 0.5  # Default volume level
         self.music_playing = True  # Track if music is playing
@@ -19,8 +20,29 @@ class MainMenu:
         self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on.png'), (50, 50))  # Load and scale music on icon
         self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off.png'), (50, 50))  # Load and scale music off icon
         self.background_image = pygame.image.load('assets/pokemon/gastly2.png')
-        #! self.background_image = pygame.transform.scale(self.background_image, (800, 800))
-        self.background_rect = self.background_image.get_rect(center=(400, 400))
+        self.background_rect = self.background_image.get_rect(center=(self.screen_size[0] // 2, self.screen_size[1] // 2))
+        
+        # Adjusted positions based on screen size
+        self.update_positions()
+
+    def set_screen_size(self, screen_size):
+        self.screen_size = screen_size  # Set the screen size
+        self.image_size = (self.screen_size[0] // 6, self.screen_size[1] // 6)  # Responsive image size
+        self.update_positions()  # Update button positions based on new screen size
+
+    def update_positions(self):
+        # Adjusted positions based on screen size for better alignment
+        button_spacing = self.screen_size[1] // 10  # Space between buttons
+        button_x_offset = self.screen_size[0] // 5  # X position for left-aligned buttons (adjusted further left)
+        self.positions = {
+            "space_invaders": (button_x_offset, button_spacing * 1),
+            "snake": (button_x_offset, button_spacing * 3),
+            "tetris": (button_x_offset, button_spacing * 5),
+            "pacman": (button_x_offset, button_spacing * 7),  # Adjusted for better fit
+            "contra": (self.screen_size[0] // 1.5, button_spacing * 1),
+            "pokemon": (self.screen_size[0] // 1.5, button_spacing * 3),
+            "tank": (self.screen_size[0] // 1.5, button_spacing * 5)
+        }
 
     def load_assets(self):
         self.images = {
@@ -30,6 +52,7 @@ class MainMenu:
             "tank": pygame.image.load('assets/tank/tank.png'),
             "contra": pygame.image.load('assets/contra/contra.png'),
             "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
+            "pacman": pygame.image.load('assets/pacman/pacman.png'),
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }
@@ -55,20 +78,10 @@ class MainMenu:
 
     def draw_menu(self):
         # Draw images with hover effect
-        positions = {
-            "space_invaders": (100, 50),
-            "snake": (100, 270),
-            "tetris": (100, 490),
-            "contra": (500, 50),
-            "pokemon": (500, 270),
-            "tank": (500, 490)
-        }
-
-        for key, pos in positions.items():
+        for key, pos in self.positions.items():
             if self.hovered_image == key:
-                # Draw a highlighted version of the image (e.g., slightly larger or with a border)
-                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 15, self.image_size[1] + 15))  # Increased size for hover effect
-                self.screen.blit(highlighted_image, (pos[0] - 7, pos[1] - 7))  # Draw with offset
+                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 20, self.image_size[1] + 20))  # Increased size for hover effect
+                self.screen.blit(highlighted_image, (pos[0] - 10, pos[1] - 10))  # Draw with offset
             else:
                 self.screen.blit(self.images[key], pos)
 
@@ -101,16 +114,8 @@ class MainMenu:
 
     def check_hover(self, mouse_pos):
         # Check if mouse is hovering over any image
-        positions = {
-            "space_invaders": (100, 50),
-            "snake": (100, 270),
-            "tetris": (100, 490),
-            "contra": (500, 50),
-            "pokemon": (500, 270),
-            "tank": (500, 490)
-        }
         self.hovered_image = None  # Reset hovered image
-        for key, pos in positions.items():
+        for key, pos in self.positions.items():
             if pos[0] <= mouse_pos[0] <= pos[0] + self.image_size[0] and pos[1] <= mouse_pos[1] <= pos[1] + self.image_size[1]:
                 self.hovered_image = key
                 break
@@ -120,15 +125,7 @@ class MainMenu:
             self.hovered_image = "sound_effects"
 
     def check_click(self, mouse_pos):
-        positions = {
-            "space_invaders": (100, 50),
-            "snake": (100, 270),
-            "tetris": (100, 490),
-            "contra": (500, 50),
-            "pokemon": (500, 270),
-            "tank": (500, 490)
-        }
-        for key, pos in positions.items():
+        for key, pos in self.positions.items():
             if pos[0] <= mouse_pos[0] <= pos[0] + self.image_size[0] and pos[1] <= mouse_pos[1] <= pos[1] + self.image_size[1]:
                 self.start_game({
                     "space_invaders": SpaceInvaders,
@@ -136,7 +133,8 @@ class MainMenu:
                     "tetris": Tetris,
                     "contra": Contra,
                     "pokemon": Pokemon,
-                    "tank": Tank
+                    "tank": Tank,
+                    "pacman": PacMan
                 }[key])
                 break
 
