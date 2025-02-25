@@ -1,7 +1,9 @@
 import pygame
 import random
 import time
-from high_score_manager import load_high_scores, update_high_score
+from util.high_score_manager import load_high_scores, update_high_score
+from util.pause_screen_manager import show_pause_screen
+from util.game_over_screen_manager import show_game_over_screen
 
 class SpaceInvaders:
     def __init__(self, screen):
@@ -55,7 +57,10 @@ class SpaceInvaders:
             if not self.paused:  # Only update if not paused
                 self.update()  # Update game state
                 self.elapsed_time = time.time() - self.start_time  # Update elapsed time only when not paused
-            self.draw()
+                self.draw()  # Draw the game only if not paused
+            else:
+                show_pause_screen(self.screen)  # Show pause screen
+            pygame.display.flip() 
             self.clock.tick(60)  # Limit to 60 frames per second
 
     def handle_events(self):
@@ -176,7 +181,11 @@ class SpaceInvaders:
         self.play_game_over_sound()
         self.show_game_over_reason()
         self.high_score = update_high_score('space_invaders', self.score)  # Update high score if current score is higher
-        self.show_game_over_screen()
+        action = show_game_over_screen(self.screen, self.score, self.high_score, self.level)
+        if action == 'restart':
+            self.reset_game()
+        elif action == 'menu':
+            self.running = False
 
     def show_game_over_reason(self):
         font = pygame.font.Font(None, 48)  # Create a font object
@@ -189,47 +198,6 @@ class SpaceInvaders:
     def play_game_over_sound(self):
         game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')
         game_over_sound.play()
-
-    def show_game_over_screen(self):
-        while True:
-            self.screen.fill((0, 0, 0))
-            font = pygame.font.Font(None, 74)
-            game_over_text = font.render("Game Over", True, (255, 0, 0))
-            self.screen.blit(game_over_text, (250, 100))
-
-            # Display scores and level
-            font = pygame.font.Font(None, 36)
-            score_text = font.render(f'Your Score: {self.score}', True, (255, 255, 255))
-            high_score_text = font.render(f'High Score: {self.high_score}', True, (255, 255, 255))
-            level_text = font.render(f'Level: {self.level}', True, (255, 255, 255))
-            self.screen.blit(score_text, (300, 200))
-            self.screen.blit(high_score_text, (300, 250))
-            self.screen.blit(level_text, (300, 300))
-
-            # Display options
-            restart_text = font.render("Press R to Restart", True, (255, 255, 255))
-            menu_text = font.render("Press M to Return to Menu", True, (255, 255, 255))
-            exit_text = font.render("Press Q to Quit", True, (255, 255, 255))
-            self.screen.blit(restart_text, (300, 350))
-            self.screen.blit(menu_text, (300, 400))
-            self.screen.blit(exit_text, (300, 450))
-
-            pygame.display.flip()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:  # Restart the game
-                        self.reset_game()
-                        return
-                    elif event.key == pygame.K_m:  # Return to menu
-                        self.running = False
-                        return
-                    elif event.key == pygame.K_q:  # Quit the game
-                        pygame.quit()
-                        return
 
     def reset_game(self):
         self.player_pos = [375, 650]
@@ -277,11 +245,5 @@ class SpaceInvaders:
         # Draw mute/unmute sound effects button
         sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
         self.screen.blit(sfx_icon, (750, 60))  # Draw sound effects icon
-
-        if self.paused:  # Show pause message
-            font = pygame.font.Font(None, 74)
-            pause_text = font.render("PAUSED, press P to continue", True, (255, 255, 0))
-            text_rect = pause_text.get_rect(center=(400, 300))  # Center the text
-            self.screen.blit(pause_text, text_rect)  # Position the text on the screen
 
         pygame.display.flip()

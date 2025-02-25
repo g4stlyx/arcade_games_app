@@ -1,2 +1,2 @@
-snake: 4
-space_invaders: 15
+snake: 9
+space_invaders: 24

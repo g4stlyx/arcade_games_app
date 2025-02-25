@@ -1,5 +1,3 @@
-import os
-
 def load_high_scores():
     scores = {}
     try:

@@ -1,11 +1,14 @@
 import pygame
 import random
-from high_score_manager import load_high_scores, update_high_score
+from util.high_score_manager import load_high_scores, update_high_score
+from util.pause_screen_manager import show_pause_screen
+from util.game_over_screen_manager import show_game_over_screen
 
 class Snake:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
+        self.clock = pygame.time.Clock()
         self.snake_pos = [[100, 50], [90, 50], [80, 50]]  # Initial snake position
         self.snake_direction = 'RIGHT'  # Initial direction
         self.food_pos = [random.randrange(1, (self.screen.get_width() // 10)) * 10,
@@ -19,17 +22,21 @@ class Snake:
         self.pause_start_time = 0  # Track when the game was paused
         self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')  # Load game over sound
         self.apple_image = pygame.image.load('assets/snake/apple.png')  # Load apple image
-        self.snake_head_image = pygame.image.load('assets/snake/snake_head2_16x16.png')  # Load snake head image
-        self.snake_body_image = pygame.image.load('assets/snake/snake_body_16x16.png')  # Load snake body image
-        self.snake_tail_image = pygame.image.load('assets/snake/snake_tail.png')  # Load snake tail image
+        self.snake_head_image = pygame.image.load('assets/snake/snake_head16.png')  # Load snake head image
+        self.snake_body_image = pygame.image.load('assets/snake/snake_body16.png')  # Load snake body image
+        self.snake_tail_image = pygame.image.load('assets/snake/snake_body16.png')
+        #self.snake_tail_image = pygame.image.load('assets/snake/snake_tail.png')  # Load snake tail image
 
     def run(self):
         while self.running:
             self.handle_events()
-            if not self.paused:
-                self.update()
+            if not self.paused:  # Only update if not paused
+                self.update()  # Update game state
                 self.elapsed_time = (pygame.time.get_ticks() - self.start_time) // 1000  # Update elapsed time
-            self.draw()
+                self.draw()  # Draw the game only if not paused
+            else:
+                show_pause_screen(self.screen)  # Show pause screen
+            pygame.display.flip() 
             pygame.time.delay(100)  # Control the speed of the game
 
     def handle_events(self):
@@ -47,6 +54,9 @@ class Snake:
                     self.snake_direction = 'RIGHT'
                 elif event.key == pygame.K_p:  # Pause the game
                     self.toggle_pause()
+
+    def toggle_pause(self):
+        self.paused = not self.paused  # Toggle pause state
 
     def update(self):
         if not self.paused:  # Only update if not paused
@@ -83,20 +93,13 @@ class Snake:
         #! background
         #background = pygame.image.load('background.png')  # Load background image
         #self.screen.blit(background, (0, 0))  # Draw background
-        #! snake created using green square pieces
-        #for pos in self.snake_pos:
-            #pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(pos[0], pos[1], 10, 10))  # Draw snake
-            #self.screen.blit(self.snake_image, (pos[0], pos[1]))  # Draw snake using image
         #! snake created using head, tail, and body parts
         if self.snake_pos:
             #* head
             self.screen.blit(self.snake_head_image, (self.snake_pos[0][0], self.snake_pos[0][1]))  # Draw head
             #* body segments using images
-            # for pos in self.snake_pos[1:-1]:
-            #     self.screen.blit(self.snake_body_image, (pos[0], pos[1]))
-            #* body using green squares
             for pos in self.snake_pos[1:-1]:
-                pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(pos[0], pos[1], 10, 10))  # Draw body as green squares
+                self.screen.blit(self.snake_body_image, (pos[0], pos[1]))
             #*tail
             if len(self.snake_pos) > 1:
                 self.screen.blit(self.snake_tail_image, (self.snake_pos[-1][0], self.snake_pos[-1][1]))  # Draw tail
@@ -106,12 +109,6 @@ class Snake:
         # Display score and timer
         self.display_score_and_timer()
 
-        # Show paused message if paused
-        if self.paused:
-            self.show_paused_message()
-
-        pygame.display.flip()  # Update the display
-
     def display_score_and_timer(self):
         font = pygame.font.Font(None, 36)
         score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
@@ -119,51 +116,14 @@ class Snake:
         self.screen.blit(score_text, (10, 10))  # Score at top left
         self.screen.blit(timer_text, (10, 40))  # Timer below score
 
-    def show_paused_message(self):
-        font = pygame.font.Font(None, 48)
-        paused_text = font.render('PAUSED, press P to continue', True, (255, 255, 255))
-        self.screen.blit(paused_text, (self.screen.get_width() // 2 - paused_text.get_width() // 2,
-                                        self.screen.get_height() // 2 - paused_text.get_height() // 2))
-
     def game_over(self):
         self.game_over_sound.play()  # Play game over sound
-        self.running = False  # End the game
         self.high_score = update_high_score('snake', self.score)  # Update high score if current score is higher
-        self.game_over_menu()
-
-    def game_over_menu(self):
-        # Game Over Menu
-        while True:
-            self.screen.fill((0, 0, 0))
-            font = pygame.font.Font(None, 48)
-            game_over_text = font.render('Game Over', True, (255, 0, 0))
-            self.screen.blit(game_over_text, (self.screen.get_width() // 2 - 100, self.screen.get_height() // 2 - 100))
-            score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
-            high_score_text = font.render(f'High Score: {self.high_score}', True, (255, 255, 255))
-            self.screen.blit(score_text, (self.screen.get_width() // 2 - 100, self.screen.get_height() // 2 - 50))
-            self.screen.blit(high_score_text, (self.screen.get_width() // 2 - 100, self.screen.get_height() // 2))
-
-            # Menu options
-            options = ['Restart (R)', 'Quit to Menu (M)', 'Quit Game (Q)']
-            for i, option in enumerate(options):
-                option_text = font.render(option, True, (255, 255, 255))
-                self.screen.blit(option_text, (self.screen.get_width() // 2 - 100, self.screen.get_height() // 2 + 50 + i * 40))
-
-            pygame.display.flip()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:  # Restart
-                        self.restart_game()
-                        return
-                    elif event.key == pygame.K_m:  # Quit to menu
-                        self.running = False
-                        return
-                    elif event.key == pygame.K_q:  # Quit game
-                        pygame.quit()
-                        return
+        action = show_game_over_screen(self.screen, self.score, self.high_score, 1)  # Assuming level is 1 for simplicity
+        if action == 'restart':
+            self.restart_game()
+        elif action == 'menu':
+            self.running = False
 
     def restart_game(self):
         self.snake_pos = [[100, 50], [90, 50], [80, 50]]  # Reset snake position
@@ -173,12 +133,3 @@ class Snake:
         self.score = 0
         self.start_time = pygame.time.get_ticks()  # Reset timer
         self.running = True
-
-    def toggle_pause(self):
-        if self.paused:
-            self.paused = False
-            # Reset the start time to account for the time spent paused
-            self.start_time += (pygame.time.get_ticks() - self.pause_start_time)
-        else:
-            self.paused = True
-            self.pause_start_time = pygame.time.get_ticks()  # Record the time when paused
