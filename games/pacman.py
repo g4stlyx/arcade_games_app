@@ -20,8 +20,8 @@ class PacmanGame:
         self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')
 
         self.pacman_pos = [375, 650]
-        self.pacman_speed = 5  # Add a speed attribute for Pac-Man's movement
-        self.ghost_speed = 1  # Initial ghost speed
+        self.pacman_speed = 150  # Adjusted for pixel/second
+        self.ghost_speed = 100  # Adjusted for pixel/second
         self.walls = self.create_walls()
         self.dots = self.create_dots()
         self.ghosts = self.create_ghosts()
@@ -50,11 +50,14 @@ class PacmanGame:
         pygame.mixer.music.set_volume(self.volume)  # Set initial volume
         pygame.mixer.music.play(-1)  # Play music in a loop
 
+        self.clock.tick(60)  # Keep the game running at 60 FPS
+
     def run(self):
         while self.running:
-            self.handle_events()
+            delta_time = self.clock.get_time() / 1000  # Get delta time in seconds
+            self.handle_events(delta_time)
             if not self.paused:  # Only update if not paused
-                self.update()  # Update game state
+                self.update(delta_time)  # Update game state, passing delta_time
                 self.elapsed_time = time.time() - self.start_time  # Update elapsed time only when not paused
                 self.draw()  # Draw the game only if not paused
             else:
@@ -67,15 +70,39 @@ class PacmanGame:
         return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(100)]
 
     def create_ghosts(self):
-        """Create a list of ghosts at random positions."""
-        return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(4)]
+        """Create a list of ghosts at random positions, away from Pac-Man."""
+        ghosts = []
+        while len(ghosts) < 4:
+            x = random.randint(0, 750)
+            y = random.randint(0, 650)
+            # Ensure ghosts are reasonably far from Pac-Man on creation
+            if ((x - self.pacman_pos[0])**2 + (y - self.pacman_pos[1])**2) > 200**2:
+                valid_position = True
+                for wall in self.walls:
+                    if (x < wall[0] + 25 and x + 20 > wall[0] and y < wall[1] + 25 and y + 20 > wall[1]):
+                        valid_position = False
+                        break  # Skip this position if it's inside a wall
+
+                if valid_position:
+                    ghosts.append([x, y])
+        return ghosts
 
     def create_powerups(self):
         """Create a list of power-ups at random positions, ensuring they don't overlap with walls."""
         powerups = []
         while len(powerups) < 2:  # Create up to 2 power-ups
-            new_powerup = [random.randint(0, 750), random.randint(0, 650)]
-            if new_powerup not in self.walls and new_powerup not in powerups:  # Ensure no overlap with walls or existing power-ups
+            x = random.randint(0, 750)
+            y = random.randint(0, 650)
+            new_powerup = [x, y]
+
+            # Check if the power-up overlaps with a wall
+            valid_position = True
+            for wall in self.walls:
+                if (x < wall[0] + 25 and x + 20 > wall[0] and y < wall[1] + 25 and y + 20 > wall[1]):
+                    valid_position = False
+                    break
+
+            if valid_position and new_powerup not in powerups:
                 powerups.append(new_powerup)
         return powerups
 
@@ -97,7 +124,7 @@ class PacmanGame:
             walls.append([random.randint(0, 768), random.randint(0, 768)])
         return walls
 
-    def handle_events(self):
+    def handle_events(self, delta_time):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -112,93 +139,159 @@ class PacmanGame:
                     elif 750 <= mouse_pos[0] <= 790 and 60 <= mouse_pos[1] <= 100:  # Check if mute/unmute sound effects button is clicked
                         self.toggle_sound_effects()
 
+
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and self.pacman_pos[0] > 0:
-            self.pacman_pos[0] -= self.pacman_speed
-        if keys[pygame.K_RIGHT] and self.pacman_pos[0] < self.screen.get_width() - 16:  # Allow movement to the right edge
-            self.pacman_pos[0] += self.pacman_speed
-        if keys[pygame.K_UP] and self.pacman_pos[1] > 0:
-            self.pacman_pos[1] -= self.pacman_speed
-        if keys[pygame.K_DOWN] and self.pacman_pos[1] < self.screen.get_height() - 16:  # Allow movement to the bottom edge
-            self.pacman_pos[1] += self.pacman_speed
+        if keys[pygame.K_LEFT]:
+            new_x = self.pacman_pos[0] - self.pacman_speed * delta_time
+            if new_x >= 0 and not self.is_blocked(self.pacman_pos, [new_x, self.pacman_pos[1]]):
+                self.pacman_pos[0] = new_x
+        if keys[pygame.K_RIGHT]:
+            new_x = self.pacman_pos[0] + self.pacman_speed * delta_time
+            if new_x <= self.screen.get_width() - 16 and not self.is_blocked(self.pacman_pos, [new_x, self.pacman_pos[1]]):
+                self.pacman_pos[0] = new_x
+        if keys[pygame.K_UP]:
+            new_y = self.pacman_pos[1] - self.pacman_speed * delta_time
+            if new_y >= 0 and not self.is_blocked(self.pacman_pos, [self.pacman_pos[0], new_y]):
+                self.pacman_pos[1] = new_y
+        if keys[pygame.K_DOWN]:
+            new_y = self.pacman_pos[1] + self.pacman_speed * delta_time
+            if  new_y <= self.screen.get_height() - 16 and not self.is_blocked(self.pacman_pos, [self.pacman_pos[0], new_y]):
+                self.pacman_pos[1] = new_y
 
-        # Ensure ghosts always move towards Pac-Man unless blocked
-        for ghost in self.ghosts:
-            if ghost[0] < self.pacman_pos[0] and not self.is_blocked(ghost, [ghost[0] + self.ghost_speed, ghost[1]]):
-                ghost[0] += self.ghost_speed
-            elif ghost[0] > self.pacman_pos[0] and not self.is_blocked(ghost, [ghost[0] - self.ghost_speed, ghost[1]]):
-                ghost[0] -= self.ghost_speed
-            if ghost[1] < self.pacman_pos[1] and not self.is_blocked(ghost, [ghost[0], ghost[1] + self.ghost_speed]):
-                ghost[1] += self.ghost_speed
-            elif ghost[1] > self.pacman_pos[1] and not self.is_blocked(ghost, [ghost[0], ghost[1] - self.ghost_speed]):
-                ghost[1] -= self.ghost_speed
-            else:
-                self.find_alternative_direction(ghost)
-
-    def update(self):
-        # Check for collisions with walls
-        for wall in self.walls:
-            if self.pacman_pos[0] < wall[0] + 25 and self.pacman_pos[0] + 25 > wall[0] and self.pacman_pos[1] < wall[1] + 25 and self.pacman_pos[1] + 25 > wall[1]:
-                if self.pacman_pos[0] < wall[0]:
-                    self.pacman_pos[0] -= self.pacman_speed
-                elif self.pacman_pos[0] > wall[0]:
-                    self.pacman_pos[0] += self.pacman_speed
-                if self.pacman_pos[1] < wall[1]:
-                    self.pacman_pos[1] -= self.pacman_speed
-                elif self.pacman_pos[1] > wall[1]:
-                    self.pacman_pos[1] += self.pacman_speed
-
-        for ghost in self.ghosts:
-            for wall in self.walls:
-                if ghost[0] < wall[0] + 25 and ghost[0] + 25 > wall[0] and ghost[1] < wall[1] + 25 and ghost[1] + 25 > wall[1]:
-                    if ghost[0] < wall[0]:
-                        ghost[0] -= 1
-                    elif ghost[0] > wall[0]:
-                        ghost[0] += 1
-                    if ghost[1] < wall[1]:
-                        ghost[1] -= 1
-                    elif ghost[1] > wall[1]:
-                        ghost[1] += 1
-
-                if ghost[0] < 0:
-                    ghost[0] = 0
-                elif ghost[0] > 768:
-                    ghost[0] = 768
-                if ghost[1] < 0:
-                    ghost[1] = 0
-                elif ghost[1] > 768:
-                    ghost[1] = 768
-
-        for dot in list(self.dots):  # Iterate over a copy to allow removal
-            if (dot[0] < self.pacman_pos[0] < dot[0] + 20) and (dot[1] < self.pacman_pos[1] < dot[1] + 20):
+    def update(self, delta_time):
+        # Dots fetching
+        for dot in list(self.dots):
+            if (dot[0] < self.pacman_pos[0] + 16 < dot[0] + 20) and \
+               (dot[1] < self.pacman_pos[1] + 16 < dot[1] + 20):
                 self.dots.remove(dot)
                 self.score += 1
                 if self.sound_effects_playing:
                     self.eat_sound.play()
 
-        # Move ghosts
         for ghost in self.ghosts:
+            # Super Mode: Ghosts Run Away
             if self.super_mode:
-                if ghost[0] < self.pacman_pos[0]:
-                    ghost[0] -= 2
-                elif ghost[0] > self.pacman_pos[0]:
-                    ghost[0] += 2
-                elif ghost[1] < self.pacman_pos[1]:
-                    ghost[1] -= 2
-                elif ghost[1] > self.pacman_pos[1]:
-                    ghost[1] += 2
-            else:
-                if ghost[0] < self.pacman_pos[0]:
-                    ghost[0] += 1
-                elif ghost[0] > self.pacman_pos[0]:
-                    ghost[0] -= 1
-                elif ghost[1] < self.pacman_pos[1]:
-                    ghost[1] += 1
-                elif ghost[1] > self.pacman_pos[1]:
-                    ghost[1] -= 1
+                dx = ghost[0] - self.pacman_pos[0]  # Flee direction
+                dy = ghost[1] - self.pacman_pos[1]
 
-        for ghost in self.ghosts:
-            if (ghost[0] < self.pacman_pos[0] < ghost[0] + 20) and (ghost[1] < self.pacman_pos[1] < ghost[1] + 20):
+                if abs(dx) > abs(dy):
+                    if dx > 0:  # Move away (left)
+                        new_x = ghost[0] + self.ghost_speed * delta_time
+                        if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                            ghost[0] = new_x
+                        else: # If blocked, try moving perpendicularly
+                            if dy > 0:
+                                new_y = ghost[1] + self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                            else:
+                                new_y = ghost[1] - self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                    else:  # Move away (right)
+                        new_x = ghost[0] - self.ghost_speed * delta_time
+                        if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                            ghost[0] = new_x
+                        else: # If blocked, try moving perpendicularly
+                            if dy > 0:
+                                new_y = ghost[1] + self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                            else:
+                                new_y = ghost[1] - self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                else:
+                    if dy > 0:  # Move away (up)
+                        new_y = ghost[1] + self.ghost_speed * delta_time
+                        if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                            ghost[1] = new_y
+                        else: # If blocked, try moving perpendicularly
+                            if dx > 0:
+                                new_x = ghost[0] + self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                            else:
+                                new_x = ghost[0] - self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                    else:  # Move away (down)
+                        new_y = ghost[1] - self.ghost_speed * delta_time
+                        if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                            ghost[1] = new_y
+                        else: # If blocked, try moving perpendicularly
+                            if dx > 0:
+                                new_x = ghost[0] + self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                            else:
+                                new_x = ghost[0] - self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+            # Normal Mode: Ghosts Chase
+            else:
+                dx = self.pacman_pos[0] - ghost[0]
+                dy = self.pacman_pos[1] - ghost[1]
+
+                if abs(dx) > abs(dy):
+                    if dx > 0:  # Move right
+                        new_x = ghost[0] + self.ghost_speed * delta_time
+                        if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                            ghost[0] = new_x
+                        else:
+                            if dy > 0:
+                                new_y = ghost[1] + self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                            else:
+                                new_y = ghost[1] - self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                    else:  # Move left
+                        new_x = ghost[0] - self.ghost_speed * delta_time
+                        if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                            ghost[0] = new_x
+                        else:
+                            if dy > 0:
+                                new_y = ghost[1] + self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                            else:
+                                new_y = ghost[1] - self.ghost_speed * delta_time
+                                if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                                    ghost[1] = new_y
+                else:
+                    if dy > 0:  # Move down
+                        new_y = ghost[1] + self.ghost_speed * delta_time
+                        if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                            ghost[1] = new_y
+                        else:
+                            if dx > 0:
+                                new_x = ghost[0] + self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                            else:
+                                new_x = ghost[0] - self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                    else:  # Move up
+                        new_y = ghost[1] - self.ghost_speed * delta_time
+                        if new_y <= self.screen.get_height() - 16 and new_y >= 0 and not self.is_blocked(ghost, [ghost[0], new_y]):
+                            ghost[1] = new_y
+                        else:
+                            if dx > 0:
+                                new_x = ghost[0] + self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+                            else:
+                                new_x = ghost[0] - self.ghost_speed * delta_time
+                                if new_x <= self.screen.get_width() - 16 and new_x >= 0 and not self.is_blocked(ghost, [new_x, ghost[1]]):
+                                    ghost[0] = new_x
+
+
+        for ghost in list(self.ghosts):
+            if (ghost[0] < self.pacman_pos[0] + 16 < ghost[0] + 20) and \
+               (ghost[1] < self.pacman_pos[1] + 16 < ghost[1] + 20):
                 if self.super_mode:
                     self.ghosts.remove(ghost)
                     self.score += 10
@@ -211,6 +304,11 @@ class PacmanGame:
                 self.powerups.remove(powerup)
                 self.super_mode = True
                 self.super_mode_timer = time.time()
+
+        # After power-up is eaten, disable super mode after its time is up.
+        if self.super_mode:
+            if time.time() - self.super_mode_timer >= 10:  # 10 seconds of super mode
+                self.super_mode = False
 
         # Check for level up condition (if no ghosts left)
         if not self.ghosts:
@@ -245,7 +343,7 @@ class PacmanGame:
             self.dots = self.create_dots()
             self.powerups = self.create_powerups()
             self.show_level_up_message()
-            self.ghost_speed = 1 + (self.level * 0.2)  # Reset and increment ghost speed
+            self.ghost_speed = 50 + (self.level * 10)  # Reset and increment ghost speed
             self.add_more_walls()
 
     def add_more_walls(self):
@@ -337,22 +435,12 @@ class PacmanGame:
     def toggle_sound_effects(self):
         self.sound_effects_playing = not self.sound_effects_playing  # Toggle sound effects state
 
-    def is_blocked(self, ghost, new_position):
+    def is_blocked(self, entity_pos, new_position):
         """Check if the new position is blocked by a wall."""
+        # Slightly increased bounding box size for more reliable collision detection
+        entity_size = 16  # Size of Pacman and Ghost images
         for wall in self.walls:
-            # Increase collision sensitivity by adjusting the bounding box size
-            if (new_position[0] < wall[0] + 20 and new_position[0] + 20 > wall[0] and
-                    new_position[1] < wall[1] + 20 and new_position[1] + 20 > wall[1]):
+            if (new_position[0] < wall[0] + 25 and new_position[0] + entity_size > wall[0] and
+                new_position[1] < wall[1] + 25 and new_position[1] + entity_size > wall[1]):
                 return True
         return False
-
-    def find_alternative_direction(self, ghost):
-        """Find an alternative direction for the ghost to move if blocked."""
-        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]  # Right, Left, Down, Up
-        random.shuffle(directions)  # Shuffle directions to add randomness
-        for dx, dy in directions:
-            new_position = [ghost[0] + dx, ghost[1] + dy]
-            if not self.is_blocked(ghost, new_position):
-                ghost[0] += dx
-                ghost[1] += dy
-                return  # Exit after moving in a new direction
