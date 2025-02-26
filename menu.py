@@ -1,5 +1,5 @@
 import pygame
-from games.pacman import PacMan
+from games.pacman import PacmanGame
 from games.space_invaders import SpaceInvaders
 from games.snake import Snake
 from games.tetris import Tetris
@@ -134,7 +134,7 @@ class MainMenu:
                     "contra": Contra,
                     "pokemon": Pokemon,
                     "tank": Tank,
-                    "pacman": PacMan
+                    "pacman": PacmanGame
                 }[key])
                 break
 
