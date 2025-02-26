@@ -10,6 +10,7 @@ TODO:
     * randomly put obstacles (may come with a level logic)
 * pacman
     * better assets (dots instead of apples, cherry instead of ufo-lol-, better walls instead of grass)
+    * music and sound effect buttons relative to the screen size.
 * tank
 * tetris
 * flappy_bird

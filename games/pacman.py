@@ -22,11 +22,12 @@ class PacmanGame:
         self.pacman_pos = [375, 650]
         self.pacman_speed = 150  # Adjusted for pixel/second
         self.ghost_speed = 100  # Adjusted for pixel/second
+        self.levels = self.define_levels()
+        self.level = 1
         self.walls = self.create_walls()
         self.dots = self.create_dots()
         self.ghosts = self.create_ghosts()
         self.powerups = self.create_powerups()
-        self.level = 1
         self.max_level = 5
         self.super_mode = False
         self.super_mode_timer = 0
@@ -44,7 +45,6 @@ class PacmanGame:
         self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), (50, 50))  # Load and scale sound effects on icon
         self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), (50, 50))  # Load and scale sound effects off icon
         self.max_powerups = 2  # Maximum number of power-ups on screen
-        
         # Load and play background music
         pygame.mixer.music.load('assets/sound_effects/menu/9. Space Debris.wav')
         pygame.mixer.music.set_volume(self.volume)  # Set initial volume
@@ -52,6 +52,57 @@ class PacmanGame:
 
         self.clock.tick(60)  # Keep the game running at 60 FPS
 
+    def define_levels(self):
+        """Define the wall layouts for each level with denser clusters."""
+
+        # Scale factor to adjust overall cluster density
+        density_scale = 1.2
+
+        level1 = []
+        for i in range(int(5 * density_scale)):
+            level1.append((random.randint(50, 700), random.randint(50, 600)))
+
+        level2 = []
+        for i in range(int(10 * density_scale)):
+            x = random.randint(50, 700)
+            y = random.randint(50, 600)
+            level2.append((x, y))
+            level2.append((x + 16, y))
+            level2.append((x, y + 16))
+
+        level3 = []
+        for i in range(int(15 * density_scale)):
+            x = random.randint(50, 700)
+            y = random.randint(50, 600)
+            level3.append((x, y))
+            level3.append((x + 16, y))
+            level3.append((x, y + 16))
+            level3.append((x + 16, y + 16))
+
+        level4 = []
+        for i in range(int(20 * density_scale)):
+            x = random.randint(50, 700)
+            y = random.randint(50, 600)
+            level4.append((x, y))
+            level4.append((x + 16, y))
+            level4.append((x, y + 16))
+            level4.append((x - 16, y))
+            level4.append((x, y - 16))
+
+        level5 = []
+        for i in range(int(25 * density_scale)):
+            x = random.randint(50, 700)
+            y = random.randint(50, 600)
+            level5.append((x, y))
+            level5.append((x + 16, y))
+            level5.append((x, y + 16))
+            level5.append((x - 16, y))
+            level5.append((x, y - 16))
+            level5.append((x + 32, y))
+            level5.append((x, y + 32))
+
+        return [level1, level2, level3, level4, level5]
+    
     def run(self):
         while self.running:
             delta_time = self.clock.get_time() / 1000  # Get delta time in seconds
@@ -107,22 +158,11 @@ class PacmanGame:
         return powerups
 
     def create_walls(self):
-        """Create a list of wall positions."""
-        walls = []
-        clusters = [
-            [(100, 100), (132, 100), (100, 132)],
-            [(300, 300), (332, 300), (300, 332)],
-            [(500, 500), (532, 500), (500, 532)],
-            [(700, 700), (732, 700), (700, 732)],
-            [(200, 200), (232, 200), (200, 232)],
-            [(400, 400), (432, 400), (400, 432)],
-            [(600, 600), (632, 600), (600, 632)]
-        ]
-        for cluster in clusters:
-            walls.extend(cluster)
-        for _ in range(50):  # Add 50 random walls
-            walls.append([random.randint(0, 768), random.randint(0, 768)])
-        return walls
+        """Create walls based on the current level."""
+        if 1 <= self.level <= len(self.levels):
+            return self.levels[self.level - 1]  # Get walls for the current level
+        else:
+            return []  # No walls if level is out of range
 
     def handle_events(self, delta_time):
         for event in pygame.event.get():
@@ -339,12 +379,13 @@ class PacmanGame:
     def level_up(self):
         if self.level < self.max_level:  # Ensure we don't exceed max level
             self.level += 1
+            self.walls = self.create_walls()  # Create walls for the new level
             self.ghosts = self.create_ghosts()
             self.dots = self.create_dots()
             self.powerups = self.create_powerups()
             self.show_level_up_message()
             self.ghost_speed = 50 + (self.level * 10)  # Reset and increment ghost speed
-            self.add_more_walls()
+            #self.add_more_walls() # this will break the game
 
     def add_more_walls(self):
         """Add more walls to the game based on the current level."""
@@ -375,6 +416,7 @@ class PacmanGame:
         self.super_mode = False
         self.super_mode_timer = 0
         self.running = True
+        self.walls = self.create_walls()
 
     def draw(self):
         self.screen.fill((0, 0, 0))  # Clear the screen *FIRST*
