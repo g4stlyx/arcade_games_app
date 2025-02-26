@@ -15,17 +15,19 @@ class PacmanGame:
         self.dot_image = pygame.image.load('assets/snake/apple.png')
         self.powerup_image = pygame.image.load('assets/space_invaders/ufo.png')
         self.background_image = pygame.image.load('assets/space_invaders/space2.jpg')
+        self.wall_image = pygame.image.load('assets/pacman/grass16.png')
         self.eat_sound = pygame.mixer.Sound('assets/space_invaders/level_up_space.wav')
         self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')
 
         self.pacman_pos = [375, 650]
         self.pacman_speed = 5  # Add a speed attribute for Pac-Man's movement
+        self.ghost_speed = 1  # Initial ghost speed
+        self.walls = self.create_walls()
         self.dots = self.create_dots()
         self.ghosts = self.create_ghosts()
         self.powerups = self.create_powerups()
-        self.wall_image = pygame.image.load('assets/pacman/grass16.png')
-        self.walls = self.create_walls()
         self.level = 1
+        self.max_level = 5
         self.super_mode = False
         self.super_mode_timer = 0
         self.score = 0
@@ -41,6 +43,7 @@ class PacmanGame:
         self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off_white.png'), (50, 50))  # Load and scale music off icon
         self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), (50, 50))  # Load and scale sound effects on icon
         self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), (50, 50))  # Load and scale sound effects off icon
+        self.max_powerups = 2  # Maximum number of power-ups on screen
         
         # Load and play background music
         pygame.mixer.music.load('assets/sound_effects/menu/9. Space Debris.wav')
@@ -68,8 +71,13 @@ class PacmanGame:
         return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(4)]
 
     def create_powerups(self):
-        """Create a list of power-ups at random positions."""
-        return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(5)]
+        """Create a list of power-ups at random positions, ensuring they don't overlap with walls."""
+        powerups = []
+        while len(powerups) < 2:  # Create up to 2 power-ups
+            new_powerup = [random.randint(0, 750), random.randint(0, 650)]
+            if new_powerup not in self.walls and new_powerup not in powerups:  # Ensure no overlap with walls or existing power-ups
+                powerups.append(new_powerup)
+        return powerups
 
     def create_walls(self):
         """Create a list of wall positions."""
@@ -107,17 +115,30 @@ class PacmanGame:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and self.pacman_pos[0] > 0:
             self.pacman_pos[0] -= self.pacman_speed
-        elif keys[pygame.K_RIGHT] and self.pacman_pos[0] < 750:
+        if keys[pygame.K_RIGHT] and self.pacman_pos[0] < self.screen.get_width() - 16:  # Allow movement to the right edge
             self.pacman_pos[0] += self.pacman_speed
-        elif keys[pygame.K_UP] and self.pacman_pos[1] > 0:
+        if keys[pygame.K_UP] and self.pacman_pos[1] > 0:
             self.pacman_pos[1] -= self.pacman_speed
-        elif keys[pygame.K_DOWN] and self.pacman_pos[1] < 650:
+        if keys[pygame.K_DOWN] and self.pacman_pos[1] < self.screen.get_height() - 16:  # Allow movement to the bottom edge
             self.pacman_pos[1] += self.pacman_speed
+
+        # Ensure ghosts always move towards Pac-Man unless blocked
+        for ghost in self.ghosts:
+            if ghost[0] < self.pacman_pos[0] and not self.is_blocked(ghost, [ghost[0] + self.ghost_speed, ghost[1]]):
+                ghost[0] += self.ghost_speed
+            elif ghost[0] > self.pacman_pos[0] and not self.is_blocked(ghost, [ghost[0] - self.ghost_speed, ghost[1]]):
+                ghost[0] -= self.ghost_speed
+            if ghost[1] < self.pacman_pos[1] and not self.is_blocked(ghost, [ghost[0], ghost[1] + self.ghost_speed]):
+                ghost[1] += self.ghost_speed
+            elif ghost[1] > self.pacman_pos[1] and not self.is_blocked(ghost, [ghost[0], ghost[1] - self.ghost_speed]):
+                ghost[1] -= self.ghost_speed
+            else:
+                self.find_alternative_direction(ghost)
 
     def update(self):
         # Check for collisions with walls
         for wall in self.walls:
-            if self.pacman_pos[0] < wall[0] + 32 and self.pacman_pos[0] + 32 > wall[0] and self.pacman_pos[1] < wall[1] + 32 and self.pacman_pos[1] + 32 > wall[1]:
+            if self.pacman_pos[0] < wall[0] + 25 and self.pacman_pos[0] + 25 > wall[0] and self.pacman_pos[1] < wall[1] + 25 and self.pacman_pos[1] + 25 > wall[1]:
                 if self.pacman_pos[0] < wall[0]:
                     self.pacman_pos[0] -= self.pacman_speed
                 elif self.pacman_pos[0] > wall[0]:
@@ -129,15 +150,15 @@ class PacmanGame:
 
         for ghost in self.ghosts:
             for wall in self.walls:
-                if ghost[0] < wall[0] + 32 and ghost[0] + 32 > wall[0] and ghost[1] < wall[1] + 32 and ghost[1] + 32 > wall[1]:
+                if ghost[0] < wall[0] + 25 and ghost[0] + 25 > wall[0] and ghost[1] < wall[1] + 25 and ghost[1] + 25 > wall[1]:
                     if ghost[0] < wall[0]:
-                        ghost[0] -= 2
+                        ghost[0] -= 1
                     elif ghost[0] > wall[0]:
-                        ghost[0] += 2
+                        ghost[0] += 1
                     if ghost[1] < wall[1]:
-                        ghost[1] -= 2
+                        ghost[1] -= 1
                     elif ghost[1] > wall[1]:
-                        ghost[1] += 2
+                        ghost[1] += 1
 
                 if ghost[0] < 0:
                     ghost[0] = 0
@@ -168,13 +189,13 @@ class PacmanGame:
                     ghost[1] += 2
             else:
                 if ghost[0] < self.pacman_pos[0]:
-                    ghost[0] += 2
+                    ghost[0] += 1
                 elif ghost[0] > self.pacman_pos[0]:
-                    ghost[0] -= 2
+                    ghost[0] -= 1
                 elif ghost[1] < self.pacman_pos[1]:
-                    ghost[1] += 2
+                    ghost[1] += 1
                 elif ghost[1] > self.pacman_pos[1]:
-                    ghost[1] -= 2
+                    ghost[1] -= 1
 
         for ghost in self.ghosts:
             if (ghost[0] < self.pacman_pos[0] < ghost[0] + 20) and (ghost[1] < self.pacman_pos[1] < ghost[1] + 20):
@@ -196,23 +217,46 @@ class PacmanGame:
             self.level_up()
 
         if not self.dots:
+            self.level_up()
+
+        if not self.dots and self.level >= self.max_level:
             self.game_over()
 
+        # Adjust the probability of spawning power-ups based on the current level
+        powerup_spawn_probability = max(0.001, 0.01 - (self.level * 0.002))  # Decrease frequency with level
+        if len(self.powerups) < self.max_powerups and random.random() < powerup_spawn_probability:
+            self.powerups.extend(self.create_powerups())  # Add new power-ups to the existing list
+
     def game_over(self):
-        self.game_over_sound.play()
+        if self.sound_effects_playing:
+            self.game_over_sound.play()
         self.high_score = update_high_score('pacman', self.score)  # Update high score if current score is higher
-        action = show_game_over_screen(self.screen, self.score, self.high_score, 1)  # Assuming level is 1 for simplicity
+        action = show_game_over_screen(self.screen, self.score, self.high_score, self.level)
         if action == 'restart':
+            self.level = 1
             self.reset_game()
         elif action == 'menu':
             self.running = False
 
     def level_up(self):
-        self.level += 1
-        self.ghosts = self.create_ghosts()
-        self.dots = self.create_dots()
-        self.powerups = self.create_powerups()
-        self.show_level_up_message()
+        if self.level < self.max_level:  # Ensure we don't exceed max level
+            self.level += 1
+            self.ghosts = self.create_ghosts()
+            self.dots = self.create_dots()
+            self.powerups = self.create_powerups()
+            self.show_level_up_message()
+            self.ghost_speed = 1 + (self.level * 0.2)  # Reset and increment ghost speed
+            self.add_more_walls()
+
+    def add_more_walls(self):
+        """Add more walls to the game based on the current level."""
+        additional_walls = self.level * 5  # Increase the number of walls based on the level
+        for _ in range(additional_walls):
+            new_wall = [random.randint(0, 750), random.randint(0, 650)]
+            # Ensure new wall does not overlap with existing walls
+            while new_wall in self.walls:
+                new_wall = [random.randint(0, 750), random.randint(0, 650)]
+            self.walls.append(new_wall)  # Add random walls
 
     def show_level_up_message(self):
         font = pygame.font.Font(None, 48)  # Create a font object
@@ -230,7 +274,8 @@ class PacmanGame:
         self.ghosts = self.create_ghosts()
         self.powerups = self.create_powerups()
         self.score = 0
-        self.level = 1
+        self.super_mode = False
+        self.super_mode_timer = 0
         self.running = True
 
     def draw(self):
@@ -291,3 +336,23 @@ class PacmanGame:
 
     def toggle_sound_effects(self):
         self.sound_effects_playing = not self.sound_effects_playing  # Toggle sound effects state
+
+    def is_blocked(self, ghost, new_position):
+        """Check if the new position is blocked by a wall."""
+        for wall in self.walls:
+            # Increase collision sensitivity by adjusting the bounding box size
+            if (new_position[0] < wall[0] + 20 and new_position[0] + 20 > wall[0] and
+                    new_position[1] < wall[1] + 20 and new_position[1] + 20 > wall[1]):
+                return True
+        return False
+
+    def find_alternative_direction(self, ghost):
+        """Find an alternative direction for the ghost to move if blocked."""
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]  # Right, Left, Down, Up
+        random.shuffle(directions)  # Shuffle directions to add randomness
+        for dx, dy in directions:
+            new_position = [ghost[0] + dx, ghost[1] + dy]
+            if not self.is_blocked(ghost, new_position):
+                ghost[0] += dx
+                ghost[1] += dy
+                return  # Exit after moving in a new direction
