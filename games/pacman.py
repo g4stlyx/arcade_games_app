@@ -25,6 +25,7 @@ class PacmanGame:
         self.powerups = self.create_powerups()
         self.wall_image = pygame.image.load('assets/pacman/grass16.png')
         self.walls = self.create_walls()
+        self.level = 1
         self.super_mode = False
         self.super_mode_timer = 0
         self.score = 0
@@ -60,7 +61,7 @@ class PacmanGame:
 
     def create_dots(self):
         """Create a list of dots at random positions."""
-        return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(50)]
+        return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(100)]
 
     def create_ghosts(self):
         """Create a list of ghosts at random positions."""
@@ -73,7 +74,18 @@ class PacmanGame:
     def create_walls(self):
         """Create a list of wall positions."""
         walls = []
-        for _ in range(30):  # Add 30 random walls
+        clusters = [
+            [(100, 100), (132, 100), (100, 132)],
+            [(300, 300), (332, 300), (300, 332)],
+            [(500, 500), (532, 500), (500, 532)],
+            [(700, 700), (732, 700), (700, 732)],
+            [(200, 200), (232, 200), (200, 232)],
+            [(400, 400), (432, 400), (400, 432)],
+            [(600, 600), (632, 600), (600, 632)]
+        ]
+        for cluster in clusters:
+            walls.extend(cluster)
+        for _ in range(50):  # Add 50 random walls
             walls.append([random.randint(0, 768), random.randint(0, 768)])
         return walls
 
@@ -95,15 +107,47 @@ class PacmanGame:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and self.pacman_pos[0] > 0:
             self.pacman_pos[0] -= self.pacman_speed
-        if keys[pygame.K_RIGHT] and self.pacman_pos[0] < 750:
+        elif keys[pygame.K_RIGHT] and self.pacman_pos[0] < 750:
             self.pacman_pos[0] += self.pacman_speed
-        if keys[pygame.K_UP] and self.pacman_pos[1] > 0:
+        elif keys[pygame.K_UP] and self.pacman_pos[1] > 0:
             self.pacman_pos[1] -= self.pacman_speed
-        if keys[pygame.K_DOWN] and self.pacman_pos[1] < 650:
+        elif keys[pygame.K_DOWN] and self.pacman_pos[1] < 650:
             self.pacman_pos[1] += self.pacman_speed
 
     def update(self):
-        # Check for collisions with dots
+        # Check for collisions with walls
+        for wall in self.walls:
+            if self.pacman_pos[0] < wall[0] + 32 and self.pacman_pos[0] + 32 > wall[0] and self.pacman_pos[1] < wall[1] + 32 and self.pacman_pos[1] + 32 > wall[1]:
+                if self.pacman_pos[0] < wall[0]:
+                    self.pacman_pos[0] -= self.pacman_speed
+                elif self.pacman_pos[0] > wall[0]:
+                    self.pacman_pos[0] += self.pacman_speed
+                if self.pacman_pos[1] < wall[1]:
+                    self.pacman_pos[1] -= self.pacman_speed
+                elif self.pacman_pos[1] > wall[1]:
+                    self.pacman_pos[1] += self.pacman_speed
+
+        for ghost in self.ghosts:
+            for wall in self.walls:
+                if ghost[0] < wall[0] + 32 and ghost[0] + 32 > wall[0] and ghost[1] < wall[1] + 32 and ghost[1] + 32 > wall[1]:
+                    if ghost[0] < wall[0]:
+                        ghost[0] -= 2
+                    elif ghost[0] > wall[0]:
+                        ghost[0] += 2
+                    if ghost[1] < wall[1]:
+                        ghost[1] -= 2
+                    elif ghost[1] > wall[1]:
+                        ghost[1] += 2
+
+                if ghost[0] < 0:
+                    ghost[0] = 0
+                elif ghost[0] > 768:
+                    ghost[0] = 768
+                if ghost[1] < 0:
+                    ghost[1] = 0
+                elif ghost[1] > 768:
+                    ghost[1] = 768
+
         for dot in list(self.dots):  # Iterate over a copy to allow removal
             if (dot[0] < self.pacman_pos[0] < dot[0] + 20) and (dot[1] < self.pacman_pos[1] < dot[1] + 20):
                 self.dots.remove(dot)
@@ -113,18 +157,24 @@ class PacmanGame:
 
         # Move ghosts
         for ghost in self.ghosts:
-            if random.random() < 0.5:  # 50% chance to move towards Pacman
+            if self.super_mode:
+                if ghost[0] < self.pacman_pos[0]:
+                    ghost[0] -= 2
+                elif ghost[0] > self.pacman_pos[0]:
+                    ghost[0] += 2
+                elif ghost[1] < self.pacman_pos[1]:
+                    ghost[1] -= 2
+                elif ghost[1] > self.pacman_pos[1]:
+                    ghost[1] += 2
+            else:
                 if ghost[0] < self.pacman_pos[0]:
                     ghost[0] += 2
                 elif ghost[0] > self.pacman_pos[0]:
                     ghost[0] -= 2
-                if ghost[1] < self.pacman_pos[1]:
+                elif ghost[1] < self.pacman_pos[1]:
                     ghost[1] += 2
                 elif ghost[1] > self.pacman_pos[1]:
                     ghost[1] -= 2
-            else:  # 50% chance to move randomly
-                ghost[0] += random.choice([-2, 2])
-                ghost[1] += random.choice([-2, 2])
 
         for ghost in self.ghosts:
             if (ghost[0] < self.pacman_pos[0] < ghost[0] + 20) and (ghost[1] < self.pacman_pos[1] < ghost[1] + 20):
@@ -141,7 +191,10 @@ class PacmanGame:
                 self.super_mode = True
                 self.super_mode_timer = time.time()
 
-        # Check for game over condition (if no dots left)
+        # Check for level up condition (if no ghosts left)
+        if not self.ghosts:
+            self.level_up()
+
         if not self.dots:
             self.game_over()
 
@@ -154,11 +207,31 @@ class PacmanGame:
         elif action == 'menu':
             self.running = False
 
+    def level_up(self):
+        self.level += 1
+        self.ghosts = self.create_ghosts()
+        self.dots = self.create_dots()
+        self.powerups = self.create_powerups()
+        self.show_level_up_message()
+
+    def show_level_up_message(self):
+        font = pygame.font.Font(None, 48)  # Create a font object
+        text_surface = font.render(f"Level Up! Now at Level {self.level}", True, (255, 255, 0))  # Render the text
+        text_rect = text_surface.get_rect(center=(400, 300))  # Center the text horizontally
+        self.screen.blit(text_surface, text_rect)  # Position the text on the screen
+        pygame.display.flip()  # Update the display
+        pygame.time.delay(2000)  # Show the message for 2 seconds
+
+        self.reset_game()
+
     def reset_game(self):
         self.pacman_pos = [375, 650]
-        self.foods = self.create_food()
+        self.dots = self.create_dots()
+        self.ghosts = self.create_ghosts()
+        self.powerups = self.create_powerups()
         self.score = 0
-        self.running = True  # Reset everything and restart the game loop
+        self.level = 1
+        self.running = True
 
     def draw(self):
         self.screen.fill((0, 0, 0))  # Clear the screen *FIRST*
@@ -191,12 +264,12 @@ class PacmanGame:
         self.screen.blit(score_text, (10, 10))
 
         # Draw mute/unmute music button
-        music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
-        self.screen.blit(music_icon, (750, 10))  # Draw music icon
+        self.music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
+        self.screen.blit(self.music_icon, (750, 10))  # Draw music icon
 
         # Draw mute/unmute sound effects button
-        sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
-        self.screen.blit(sfx_icon, (750, 60))  # Draw sound effects icon
+        self.sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
+        self.screen.blit(self.sfx_icon, (750, 60))  # Draw sound effects icon
 
         # Draw super mode timer
         if self.super_mode:
