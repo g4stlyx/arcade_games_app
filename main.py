@@ -3,7 +3,7 @@ from menu import MainMenu
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((800, 800))
+    screen = pygame.display.set_mode((700, 550), pygame.RESIZABLE)
     pygame.display.set_caption("Arcade Super App")
     
     menu = MainMenu(screen)

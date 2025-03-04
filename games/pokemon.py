@@ -15,6 +15,8 @@ class Pokemon:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
 
     def update(self):
         # Update game state

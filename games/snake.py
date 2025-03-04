@@ -43,6 +43,8 @@ class Snake:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and self.snake_direction != 'DOWN':
                     self.snake_direction = 'UP'

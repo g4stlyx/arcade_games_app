@@ -8,20 +8,38 @@ from util.game_over_screen_manager import show_game_over_screen
 class PacmanGame:
     def __init__(self, screen):
         self.screen = screen
+        self.screen_width = self.screen.get_width()
+        self.screen_height = self.screen.get_height()
         self.running = True
         self.clock = pygame.time.Clock()
-        self.pacman_image = pygame.transform.scale(pygame.image.load('assets/pacman/pacman.png'), (16, 16))
-        self.ghost_image = pygame.image.load('assets/snake/mouse.png')
-        self.dot_image = pygame.image.load('assets/snake/apple.png')
-        self.powerup_image = pygame.image.load('assets/space_invaders/ufo.png')
+        
+        # Calculate adaptive element sizes
+        self.element_size = min(16, max(int(min(self.screen_width, self.screen_height) / 40), 8))
+        
+        # Scale images based on screen size
+        self.pacman_image = pygame.transform.scale(pygame.image.load('assets/pacman/pacman.png'), 
+                                                  (self.element_size, self.element_size))
+        self.ghost_image = pygame.transform.scale(pygame.image.load('assets/snake/mouse.png'),
+                                                 (self.element_size, self.element_size))
+        self.dot_image = pygame.transform.scale(pygame.image.load('assets/snake/apple.png'),
+                                               (self.element_size, self.element_size))
+        self.powerup_image = pygame.transform.scale(pygame.image.load('assets/space_invaders/ufo.png'),
+                                                  (self.element_size, self.element_size))
+        self.wall_image = pygame.transform.scale(pygame.image.load('assets/pacman/grass16.png'),
+                                               (self.element_size, self.element_size))
+        
+        # Load and scale background image
         self.background_image = pygame.image.load('assets/space_invaders/space2.jpg')
-        self.wall_image = pygame.image.load('assets/pacman/grass16.png')
+        self.background_image = pygame.transform.scale(self.background_image, 
+                                                     (self.screen_width, self.screen_height))
+        
         self.eat_sound = pygame.mixer.Sound('assets/space_invaders/level_up_space.wav')
         self.game_over_sound = pygame.mixer.Sound('assets/space_invaders/game_over_space.wav')
 
-        self.pacman_pos = [375, 650]
-        self.pacman_speed = 150  # Adjusted for pixel/second
-        self.ghost_speed = 100  # Adjusted for pixel/second
+        # Responsive positioning
+        self.pacman_pos = [self.screen_width // 2, self.screen_height - self.element_size * 3]
+        self.pacman_speed = self.screen_width // 6  # Adaptive speed
+        self.ghost_speed = self.screen_width // 8  # Adaptive speed
         self.levels = self.define_levels()
         self.level = 1
         self.walls = self.create_walls()
@@ -40,11 +58,24 @@ class PacmanGame:
         self.volume = 0.5  # Default volume level
         self.music_playing = True  # Track if music is playing
         self.sound_effects_playing = True  # Track if sound effects are playing
-        self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on_white.png'), (50, 50))  # Load and scale music on icon
-        self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off_white.png'), (50, 50))  # Load and scale music off icon
-        self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), (50, 50))  # Load and scale sound effects on icon
-        self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), (50, 50))  # Load and scale sound effects off icon
+        
+        # Load and scale icons based on screen size
+        icon_size = min(50, self.screen_width // 16)
+        self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on_white.png'), 
+                                                  (icon_size, icon_size))
+        self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off_white.png'), 
+                                                   (icon_size, icon_size))
+        self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), 
+                                                 (icon_size, icon_size))
+        self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), 
+                                                  (icon_size, icon_size))
+        
+        # Calculate icon positions based on screen size
+        self.music_icon_pos = (self.screen_width - icon_size - 10, 10)
+        self.sfx_icon_pos = (self.screen_width - icon_size - 10, icon_size + 20)
+        
         self.max_powerups = 2  # Maximum number of power-ups on screen
+        
         # Load and play background music
         pygame.mixer.music.load('assets/sound_effects/menu/9. Space Debris.wav')
         pygame.mixer.music.set_volume(self.volume)  # Set initial volume
@@ -54,54 +85,107 @@ class PacmanGame:
 
     def define_levels(self):
         """Define the wall layouts for each level with denser clusters."""
-
         # Scale factor to adjust overall cluster density
         density_scale = 1.2
-
+        margin = self.element_size * 3  # Margin from edges
+        
+        # Calculate playable area
+        max_x = self.screen_width - margin
+        max_y = self.screen_height - margin
+        
         level1 = []
         for i in range(int(5 * density_scale)):
-            level1.append((random.randint(50, 700), random.randint(50, 600)))
+            level1.append((random.randint(margin, max_x), random.randint(margin, max_y)))
 
         level2 = []
         for i in range(int(10 * density_scale)):
-            x = random.randint(50, 700)
-            y = random.randint(50, 600)
+            x = random.randint(margin, max_x)
+            y = random.randint(margin, max_y)
             level2.append((x, y))
-            level2.append((x + 16, y))
-            level2.append((x, y + 16))
+            level2.append((x + self.element_size, y))
+            level2.append((x, y + self.element_size))
 
         level3 = []
         for i in range(int(15 * density_scale)):
-            x = random.randint(50, 700)
-            y = random.randint(50, 600)
+            x = random.randint(margin, max_x)
+            y = random.randint(margin, max_y)
             level3.append((x, y))
-            level3.append((x + 16, y))
-            level3.append((x, y + 16))
-            level3.append((x + 16, y + 16))
+            level3.append((x + self.element_size, y))
+            level3.append((x, y + self.element_size))
+            level3.append((x + self.element_size, y + self.element_size))
 
         level4 = []
         for i in range(int(20 * density_scale)):
-            x = random.randint(50, 700)
-            y = random.randint(50, 600)
+            x = random.randint(margin, max_x)
+            y = random.randint(margin, max_y)
             level4.append((x, y))
-            level4.append((x + 16, y))
-            level4.append((x, y + 16))
-            level4.append((x - 16, y))
-            level4.append((x, y - 16))
+            level4.append((x + self.element_size, y))
+            level4.append((x, y + self.element_size))
+            level4.append((x - self.element_size, y))
+            level4.append((x, y - self.element_size))
 
         level5 = []
         for i in range(int(25 * density_scale)):
-            x = random.randint(50, 700)
-            y = random.randint(50, 600)
+            x = random.randint(margin, max_x)
+            y = random.randint(margin, max_y)
             level5.append((x, y))
-            level5.append((x + 16, y))
-            level5.append((x, y + 16))
-            level5.append((x - 16, y))
-            level5.append((x, y - 16))
-            level5.append((x + 32, y))
-            level5.append((x, y + 32))
+            level5.append((x + self.element_size, y))
+            level5.append((x, y + self.element_size))
+            level5.append((x - self.element_size, y))
+            level5.append((x, y - self.element_size))
+            level5.append((x + self.element_size * 2, y))
+            level5.append((x, y + self.element_size * 2))
 
         return [level1, level2, level3, level4, level5]
+    
+    def handle_window_resize(self):
+        """Update all size-dependent variables when window is resized"""
+        self.screen_width = self.screen.get_width()
+        self.screen_height = self.screen.get_height()
+        
+        # Recalculate sizes
+        self.element_size = min(16, max(int(min(self.screen_width, self.screen_height) / 40), 8))
+        
+        # Rescale all images
+        self.pacman_image = pygame.transform.scale(pygame.image.load('assets/pacman/pacman.png'), 
+                                                  (self.element_size, self.element_size))
+        self.ghost_image = pygame.transform.scale(pygame.image.load('assets/snake/mouse.png'),
+                                                 (self.element_size, self.element_size))
+        self.dot_image = pygame.transform.scale(pygame.image.load('assets/snake/apple.png'),
+                                               (self.element_size, self.element_size))
+        self.powerup_image = pygame.transform.scale(pygame.image.load('assets/space_invaders/ufo.png'),
+                                                  (self.element_size, self.element_size))
+        self.wall_image = pygame.transform.scale(pygame.image.load('assets/pacman/grass16.png'),
+                                               (self.element_size, self.element_size))
+        
+        # Rescale background
+        self.background_image = pygame.transform.scale(
+            pygame.image.load('assets/space_invaders/space2.jpg'),
+            (self.screen_width, self.screen_height)
+        )
+        
+        # Recalculate speeds
+        self.pacman_speed = self.screen_width // 6
+        self.ghost_speed = self.screen_width // 8
+        
+        # Recalculate icon sizes and positions
+        icon_size = min(50, self.screen_width // 16)
+        self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on_white.png'), 
+                                                  (icon_size, icon_size))
+        self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off_white.png'), 
+                                                   (icon_size, icon_size))
+        self.sfx_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_on_white.png'), 
+                                                 (icon_size, icon_size))
+        self.sfx_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/sound_off_white.png'), 
+                                                  (icon_size, icon_size))
+        
+        # Recalculate icon positions
+        self.music_icon_pos = (self.screen_width - icon_size - 10, 10)
+        self.sfx_icon_pos = (self.screen_width - icon_size - 10, icon_size + 20)
+        
+        # Update game elements
+        self.levels = self.define_levels()
+        self.walls = self.create_walls()
     
     def run(self):
         while self.running:
@@ -118,19 +202,30 @@ class PacmanGame:
 
     def create_dots(self):
         """Create a list of dots at random positions."""
-        return [[random.randint(0, 750), random.randint(0, 650)] for _ in range(100)]
+        margin = self.element_size  # Safety margin from edge
+        num_dots = int((self.screen_width * self.screen_height) / 6400)  # Scale dots with screen size
+        return [[random.randint(margin, self.screen_width - margin), 
+                 random.randint(margin, self.screen_height - margin)] 
+                for _ in range(num_dots)]
 
     def create_ghosts(self):
         """Create a list of ghosts at random positions, away from Pac-Man."""
         ghosts = []
-        while len(ghosts) < 4:
-            x = random.randint(0, 750)
-            y = random.randint(0, 650)
+        num_ghosts = min(4 + self.level, 8)  # Scale number of ghosts with level, max 8
+        min_distance = min(self.screen_width, self.screen_height) / 4  # Minimum distance from Pacman
+        
+        while len(ghosts) < num_ghosts:
+            x = random.randint(self.element_size, self.screen_width - self.element_size * 2)
+            y = random.randint(self.element_size, self.screen_height - self.element_size * 2)
+            
             # Ensure ghosts are reasonably far from Pac-Man on creation
-            if ((x - self.pacman_pos[0])**2 + (y - self.pacman_pos[1])**2) > 200**2:
+            if ((x - self.pacman_pos[0])**2 + (y - self.pacman_pos[1])**2) > min_distance**2:
                 valid_position = True
                 for wall in self.walls:
-                    if (x < wall[0] + 25 and x + 20 > wall[0] and y < wall[1] + 25 and y + 20 > wall[1]):
+                    if (x < wall[0] + self.element_size and 
+                        x + self.element_size > wall[0] and 
+                        y < wall[1] + self.element_size and 
+                        y + self.element_size > wall[1]):
                         valid_position = False
                         break  # Skip this position if it's inside a wall
 
@@ -141,20 +236,28 @@ class PacmanGame:
     def create_powerups(self):
         """Create a list of power-ups at random positions, ensuring they don't overlap with walls."""
         powerups = []
-        while len(powerups) < 2:  # Create up to 2 power-ups
-            x = random.randint(0, 750)
-            y = random.randint(0, 650)
+        max_powerups = min(2, self.level)  # Scale with level, max 2
+        attempts = 0
+        
+        while len(powerups) < max_powerups and attempts < 20:
+            attempts += 1
+            x = random.randint(self.element_size, self.screen_width - self.element_size * 2)
+            y = random.randint(self.element_size, self.screen_height - self.element_size * 2)
             new_powerup = [x, y]
 
             # Check if the power-up overlaps with a wall
             valid_position = True
             for wall in self.walls:
-                if (x < wall[0] + 25 and x + 20 > wall[0] and y < wall[1] + 25 and y + 20 > wall[1]):
+                if (x < wall[0] + self.element_size and 
+                    x + self.element_size > wall[0] and 
+                    y < wall[1] + self.element_size and 
+                    y + self.element_size > wall[1]):
                     valid_position = False
                     break
 
             if valid_position and new_powerup not in powerups:
                 powerups.append(new_powerup)
+                
         return powerups
 
     def create_walls(self):
@@ -168,17 +271,23 @@ class PacmanGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                self.handle_window_resize()  # Update all size-dependent variables
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:  # Toggle pause with 'P' key
                     self.paused = not self.paused
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
                     mouse_pos = pygame.mouse.get_pos()
-                    if 750 <= mouse_pos[0] <= 790 and 10 <= mouse_pos[1] <= 50:  # Check if mute/unmute music button is clicked
+                    # Check if music icon is clicked
+                    if (self.music_icon_pos[0] <= mouse_pos[0] <= self.music_icon_pos[0] + self.music_icon_on.get_width() and 
+                        self.music_icon_pos[1] <= mouse_pos[1] <= self.music_icon_pos[1] + self.music_icon_on.get_height()):
                         self.toggle_music()
-                    elif 750 <= mouse_pos[0] <= 790 and 60 <= mouse_pos[1] <= 100:  # Check if mute/unmute sound effects button is clicked
+                    # Check if sound effects icon is clicked
+                    elif (self.sfx_icon_pos[0] <= mouse_pos[0] <= self.sfx_icon_pos[0] + self.sfx_icon_on.get_width() and 
+                          self.sfx_icon_pos[1] <= mouse_pos[1] <= self.sfx_icon_pos[1] + self.sfx_icon_on.get_height()):
                         self.toggle_sound_effects()
-
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -187,7 +296,7 @@ class PacmanGame:
                 self.pacman_pos[0] = new_x
         if keys[pygame.K_RIGHT]:
             new_x = self.pacman_pos[0] + self.pacman_speed * delta_time
-            if new_x <= self.screen.get_width() - 16 and not self.is_blocked(self.pacman_pos, [new_x, self.pacman_pos[1]]):
+            if new_x <= self.screen_width - self.element_size and not self.is_blocked(self.pacman_pos, [new_x, self.pacman_pos[1]]):
                 self.pacman_pos[0] = new_x
         if keys[pygame.K_UP]:
             new_y = self.pacman_pos[1] - self.pacman_speed * delta_time
@@ -195,7 +304,7 @@ class PacmanGame:
                 self.pacman_pos[1] = new_y
         if keys[pygame.K_DOWN]:
             new_y = self.pacman_pos[1] + self.pacman_speed * delta_time
-            if  new_y <= self.screen.get_height() - 16 and not self.is_blocked(self.pacman_pos, [self.pacman_pos[0], new_y]):
+            if new_y <= self.screen_height - self.element_size and not self.is_blocked(self.pacman_pos, [self.pacman_pos[0], new_y]):
                 self.pacman_pos[1] = new_y
 
     def update(self, delta_time):
@@ -398,17 +507,27 @@ class PacmanGame:
             self.walls.append(new_wall)  # Add random walls
 
     def show_level_up_message(self):
-        font = pygame.font.Font(None, 48)  # Create a font object
-        text_surface = font.render(f"Level Up! Now at Level {self.level}", True, (255, 255, 0))  # Render the text
-        text_rect = text_surface.get_rect(center=(400, 300))  # Center the text horizontally
-        self.screen.blit(text_surface, text_rect)  # Position the text on the screen
-        pygame.display.flip()  # Update the display
+        # Use responsive font size
+        font_size = max(36, min(self.screen_width, self.screen_height) // 15)
+        font = pygame.font.Font(None, font_size)
+        
+        text_surface = font.render(f"Level Up! Now at Level {self.level}", True, (255, 255, 0))
+        text_rect = text_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+        
+        # Create a semi-transparent overlay
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))
+        
+        # Draw the overlay and text
+        self.screen.blit(overlay, (0, 0))
+        self.screen.blit(text_surface, text_rect)
+        
+        pygame.display.flip()
         pygame.time.delay(2000)  # Show the message for 2 seconds
 
-        self.reset_game()
-
     def reset_game(self):
-        self.pacman_pos = [375, 650]
+        # Reset all game elements with responsive positions
+        self.pacman_pos = [self.screen_width // 2, self.screen_height - self.element_size * 3]
         self.dots = self.create_dots()
         self.ghosts = self.create_ghosts()
         self.powerups = self.create_powerups()
@@ -417,6 +536,10 @@ class PacmanGame:
         self.super_mode_timer = 0
         self.running = True
         self.walls = self.create_walls()
+        
+        # Reset speeds based on current screen size
+        self.pacman_speed = self.screen_width // 6
+        self.ghost_speed = self.screen_width // 8
 
     def draw(self):
         self.screen.fill((0, 0, 0))  # Clear the screen *FIRST*
@@ -443,18 +566,23 @@ class PacmanGame:
         for powerup in self.powerups:
             self.screen.blit(self.powerup_image, (powerup[0], powerup[1]))  # Draw power-up
 
-        # Draw score
-        font = pygame.font.Font(None, 36)
+        # Draw score - responsive font size
+        font_size = max(24, self.screen_width // 40)
+        font = pygame.font.Font(None, font_size)
         score_text = font.render(f'Score: {self.score}', True, (255, 255, 0))
         self.screen.blit(score_text, (10, 10))
 
         # Draw mute/unmute music button
-        self.music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
-        self.screen.blit(self.music_icon, (750, 10))  # Draw music icon
+        music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
+        self.screen.blit(music_icon, self.music_icon_pos)  # Draw music icon
 
         # Draw mute/unmute sound effects button
-        self.sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
-        self.screen.blit(self.sfx_icon, (750, 60))  # Draw sound effects icon
+        sfx_icon = self.sfx_icon_on if self.sound_effects_playing else self.sfx_icon_off
+        self.screen.blit(sfx_icon, self.sfx_icon_pos)  # Draw sound effects icon
+
+        # Draw level indicator
+        level_text = font.render(f'Level: {self.level}', True, (255, 255, 0))
+        self.screen.blit(level_text, (10, 10 + font_size))
 
         # Draw super mode timer
         if self.super_mode:
@@ -462,9 +590,8 @@ class PacmanGame:
             if elapsed_time > 10:  # Super mode lasts for 10 seconds
                 self.super_mode = False
             else:
-                font = pygame.font.Font(None, 36)
                 super_mode_text = font.render(f'Super Mode: {10 - int(elapsed_time)}', True, (255, 0, 0))
-                self.screen.blit(super_mode_text, (10, 50))
+                self.screen.blit(super_mode_text, (10, 10 + font_size * 2))
 
     def toggle_music(self):
         if self.music_playing:
@@ -479,10 +606,10 @@ class PacmanGame:
 
     def is_blocked(self, entity_pos, new_position):
         """Check if the new position is blocked by a wall."""
-        # Slightly increased bounding box size for more reliable collision detection
-        entity_size = 16  # Size of Pacman and Ghost images
         for wall in self.walls:
-            if (new_position[0] < wall[0] + 25 and new_position[0] + entity_size > wall[0] and
-                new_position[1] < wall[1] + 25 and new_position[1] + entity_size > wall[1]):
+            if (new_position[0] < wall[0] + self.element_size and 
+                new_position[0] + self.element_size > wall[0] and
+                new_position[1] < wall[1] + self.element_size and 
+                new_position[1] + self.element_size > wall[1]):
                 return True
         return False

@@ -67,37 +67,54 @@ class MainMenu:
 
     def run(self):
         while self.running:
-            self.screen.fill((0, 0, 0))  # Fill the screen with black
-            self.screen.blit(self.background_image, self.background_rect)  # Draw centered background image
-            transparent_surface = pygame.Surface((800, 800), pygame.SRCALPHA)
-            transparent_surface.fill((255, 255, 255, 128))  # Fill with white and 50% transparency
-            #! self.screen.blit(self.background_image, (0, 0))  # Draw background image
-            self.screen.blit(transparent_surface, (0, 0))  # Draw transparent overlay
-            self.draw_menu()
+            # Handle events first to catch resize events
             self.handle_events()
+            
+            # Clear and redraw the screen
+            self.screen.fill((0, 0, 0))  # Fill the screen with black
+            
+            # Scale background image to match current screen size
+            scaled_background = pygame.transform.scale(self.background_image, self.screen_size)
+            self.background_rect = scaled_background.get_rect(center=(self.screen_size[0] // 2, self.screen_size[1] // 2))
+            self.screen.blit(scaled_background, self.background_rect)
+            
+            # Create a transparent overlay scaled to the current screen size
+            transparent_surface = pygame.Surface(self.screen_size, pygame.SRCALPHA)
+            transparent_surface.fill((255, 255, 255, 128))  # Fill with white and 50% transparency
+            self.screen.blit(transparent_surface, (0, 0))
+            
+            self.draw_menu()
 
     def draw_menu(self):
         # Draw images with hover effect
         for key, pos in self.positions.items():
             if self.hovered_image == key:
-                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 20, self.image_size[1] + 20))  # Increased size for hover effect
-                self.screen.blit(highlighted_image, (pos[0] - 10, pos[1] - 10))  # Draw with offset
+                highlighted_image = pygame.transform.scale(self.images[key], (self.image_size[0] + 20, self.image_size[1] + 20))
+                self.screen.blit(highlighted_image, (pos[0] - 10, pos[1] - 10))
             else:
-                self.screen.blit(self.images[key], pos)
+                # Scale images to current screen size
+                scaled_image = pygame.transform.scale(self.images[key], self.image_size)
+                self.screen.blit(scaled_image, pos)
 
-        # Draw volume slider label
-        font = pygame.font.Font(None, 36)  # Create a font object
-        text_surface = font.render("Volume Slider", True, (0, 0, 0))  # Render the text
-        self.screen.blit(text_surface, (50, 720))  # Position the text above the slider
+        # Responsive font size
+        font_size = max(24, self.screen_size[0] // 22)
+        font = pygame.font.Font(None, font_size)
+        
+        # Draw volume slider label with responsive position
+        slider_y = self.screen_size[1] - 80  # Position from bottom
+        text_surface = font.render("Volume Slider", True, (0, 0, 0))
+        self.screen.blit(text_surface, (50, slider_y))
+        
+        # Draw volume slider with responsive dimensions
+        slider_width = self.screen_size[0] - 100  # Width based on screen size
+        pygame.draw.rect(self.screen, (200, 200, 200), (50, slider_y + 30, slider_width, 20))
+        pygame.draw.rect(self.screen, (0, 255, 0), (50, slider_y + 30, slider_width * self.volume, 20))
+        pygame.draw.rect(self.screen, (0, 0, 0), (50 + slider_width * self.volume - 5, slider_y + 25, 10, 30))
 
-        # Draw volume slider
-        pygame.draw.rect(self.screen, (200, 200, 200), (50, 750, 700, 20))  # Slider background
-        pygame.draw.rect(self.screen, (0, 255, 0), (50, 750, 700 * self.volume, 20))  # Slider fill
-        pygame.draw.rect(self.screen, (0, 0, 0), (50 + 700 * self.volume - 5, 745, 10, 30))  # Slider knob
-
-        # Draw mute/unmute music button
+        # Draw mute/unmute music button in a responsive position
         music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
-        self.screen.blit(music_icon, (750, 15))  # Draw music icon
+        icon_size = music_icon.get_width()
+        self.screen.blit(music_icon, (self.screen_size[0] - icon_size - 10, 10))
 
         pygame.display.flip()
 
@@ -105,6 +122,14 @@ class MainMenu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                # Update screen and recalculate all size-dependent variables
+                self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                self.set_screen_size((event.w, event.h))
+                # Re-scale music icons to fit new screen size
+                icon_size = min(50, self.screen_size[0] // 16)
+                self.music_icon_on = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_on.png'), (icon_size, icon_size))
+                self.music_icon_off = pygame.transform.scale(pygame.image.load('assets/sound_effects/music_off.png'), (icon_size, icon_size))
             elif event.type == pygame.MOUSEMOTION:
                 self.check_hover(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -113,18 +138,23 @@ class MainMenu:
                     self.check_volume_slider(event.pos)
 
     def check_hover(self, mouse_pos):
-        # Check if mouse is hovering over any image
-        self.hovered_image = None  # Reset hovered image
+        # Reset hovered image
+        self.hovered_image = None
+        
+        # Check if mouse is hovering over any game icon
         for key, pos in self.positions.items():
             if pos[0] <= mouse_pos[0] <= pos[0] + self.image_size[0] and pos[1] <= mouse_pos[1] <= pos[1] + self.image_size[1]:
                 self.hovered_image = key
                 break
 
-        # Check if hovering over sound effects button
-        if 750 <= mouse_pos[0] <= 800 and 60 <= mouse_pos[1] <= 110:
-            self.hovered_image = "sound_effects"
+        # Check if hovering over music icon (responsive position)
+        icon_size = self.music_icon_on.get_width()
+        if (self.screen_size[0] - icon_size - 10 <= mouse_pos[0] <= self.screen_size[0] - 10 and 
+            10 <= mouse_pos[1] <= 10 + icon_size):
+            self.hovered_image = "music"
 
     def check_click(self, mouse_pos):
+        # Check for game icon clicks
         for key, pos in self.positions.items():
             if pos[0] <= mouse_pos[0] <= pos[0] + self.image_size[0] and pos[1] <= mouse_pos[1] <= pos[1] + self.image_size[1]:
                 self.start_game({
@@ -138,15 +168,20 @@ class MainMenu:
                 }[key])
                 break
 
-        # Check if stop music button is clicked
-        if 750 <= mouse_pos[0] <= 800 and 10 <= mouse_pos[1] <= 60:
+        # Check music icon click (responsive position)
+        icon_size = self.music_icon_on.get_width()
+        if (self.screen_size[0] - icon_size - 10 <= mouse_pos[0] <= self.screen_size[0] - 10 and 
+            10 <= mouse_pos[1] <= 10 + icon_size):
             self.toggle_music()
 
     def check_volume_slider(self, mouse_pos):
-        if 50 <= mouse_pos[0] <= 750 and 750 <= mouse_pos[1] <= 770:
-            # Calculate volume based on slider position
-            self.volume = (mouse_pos[0] - 50) / 700
-            pygame.mixer.music.set_volume(self.volume)  # Set the new volume
+        # Responsive slider position and dimensions
+        slider_y = self.screen_size[1] - 50
+        slider_width = self.screen_size[0] - 100
+        
+        if 50 <= mouse_pos[0] <= 50 + slider_width and slider_y <= mouse_pos[1] <= slider_y + 20:
+            self.volume = (mouse_pos[0] - 50) / slider_width
+            pygame.mixer.music.set_volume(self.volume)
 
     def toggle_music(self):
         if self.music_playing:

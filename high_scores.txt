@@ -1,4 +1,4 @@
 snake: 9
-space_invaders: 24
+space_invaders: 46
 pacman: 76
 tetris: 800

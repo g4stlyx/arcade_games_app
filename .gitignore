@@ -1,0 +1,16 @@
+# Ignore environment files
+.env
+.venv/
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+__pycache__
+
+# Distribution / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
