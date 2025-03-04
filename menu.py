@@ -96,21 +96,10 @@ class MainMenu:
                 scaled_image = pygame.transform.scale(self.images[key], self.image_size)
                 self.screen.blit(scaled_image, pos)
 
-        # Responsive font size
+        # Draw game titles under icons
         font_size = max(24, self.screen_size[0] // 22)
         font = pygame.font.Font(None, font_size)
         
-        # Draw volume slider label with responsive position
-        slider_y = self.screen_size[1] - 80  # Position from bottom
-        text_surface = font.render("Volume Slider", True, (0, 0, 0))
-        self.screen.blit(text_surface, (50, slider_y))
-        
-        # Draw volume slider with responsive dimensions
-        slider_width = self.screen_size[0] - 100  # Width based on screen size
-        pygame.draw.rect(self.screen, (200, 200, 200), (50, slider_y + 30, slider_width, 20))
-        pygame.draw.rect(self.screen, (0, 255, 0), (50, slider_y + 30, slider_width * self.volume, 20))
-        pygame.draw.rect(self.screen, (0, 0, 0), (50 + slider_width * self.volume - 5, slider_y + 25, 10, 30))
-
         # Draw mute/unmute music button in a responsive position
         music_icon = self.music_icon_on if self.music_playing else self.music_icon_off
         icon_size = music_icon.get_width()
@@ -135,7 +124,6 @@ class MainMenu:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
                     self.check_click(event.pos)
-                    self.check_volume_slider(event.pos)
 
     def check_hover(self, mouse_pos):
         # Reset hovered image

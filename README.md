@@ -3,7 +3,6 @@
 TODO:
 * general:
     * app icon
-    * responsivity in every page/game
 * space_invaders:
     * better images/sound effects
     * maybe leaving values of #enemies, enemy_speed etc. to the user. (config file)
