@@ -55,7 +55,7 @@ class MainMenu:
             "contra": pygame.image.load('assets/contra/contra.png'),
             "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
             "pacman": pygame.image.load('assets/pacman/pacman.png'),
-            "flappy_bird": pygame.image.load('assets/pokemon/abra.png'), # Add flappy bird icon
+            "flappy_bird": pygame.image.load('assets/flappy_bird/bird.png'),
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }

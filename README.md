@@ -1,6 +1,10 @@
-## arcade_games_app
+# arcade_games_app
 
-TODO:
+### To Run:
+1. `pip install -r requirements.txt`
+2. `py main.py`
+
+### Todo:
 * general:
     * app icon
 * space_invaders:
@@ -15,12 +19,13 @@ TODO:
     * better assets (dots instead of apples, cherry instead of ufo-lol-, better walls instead of grass)
     * ghosts shouldnt get stuck at the corners when the player is running after them
     * some ghosts should move randomly instead of all ghosts running after the player
-* tank
 * tetris
     * more complex shapes?
 * flappy_bird
-    * assets special for it (bird, pipe, sound effects, etc)
+    * sound effects
+    * level logic? game would be faster and pipe gaps would be closer as the player progresses
 * contra
+* tank
 * pokemon 
     * can be a seperate bigger game (something like a mini pokemon vortex??)
 * bomberman

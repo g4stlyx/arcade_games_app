@@ -16,16 +16,16 @@ class FlappyBird:
         
         # Adaptive sizes based on screen dimensions
         self.scale_factor = min(self.screen_width, self.screen_height) / 800
-        self.bird_size = int(40 * self.scale_factor)
-        self.pipe_width = int(80 * self.scale_factor)
-        self.gap_height = int(200 * self.scale_factor)
-        
+        self.bird_size = int(50 * self.scale_factor)
+        self.pipe_width = int(70 * self.scale_factor)
+        self.gap_height = int(180 * self.scale_factor)
+
         # Load assets and scale them
         self.bird_image = pygame.transform.scale(
-            pygame.image.load('assets/space_invaders/ship2.png'), 
+            pygame.image.load('assets/flappy_bird/bird.png'), 
             (self.bird_size, self.bird_size)
         )
-        self.pipe_image = pygame.image.load('assets/space_invaders/alien4.png')
+        self.pipe_image = pygame.image.load('assets/flappy_bird/pipe.png')
         self.background_image = pygame.transform.scale(
             pygame.image.load('assets/space_invaders/space1.jpg'),
             (self.screen_width, self.screen_height)
@@ -81,11 +81,11 @@ class FlappyBird:
         self.bird_x = self.screen_width // 4
         self.bird_y = self.screen_height // 2
         self.bird_velocity = 0
-        self.gravity = 0.5 * self.scale_factor
-        self.flap_strength = -10 * self.scale_factor
+        self.gravity = 0.4 * self.scale_factor  
+        self.flap_strength = -9 * self.scale_factor
         
         # Pipe generation
-        self.pipe_speed = 3 * self.scale_factor
+        self.pipe_speed = 4 * self.scale_factor 
         self.pipes = []
         self.add_new_pipe()
         
@@ -96,7 +96,7 @@ class FlappyBird:
         self.start_time = time.time()
         self.elapsed_time = 0
         self.last_pipe_time = time.time()
-        self.pipe_interval = 2.5  # Seconds between pipe spawns
+        self.pipe_interval = 2.2  # Seconds between pipe spawns
 
     def add_new_pipe(self):
         # Create a new pipe with random gap position
@@ -139,9 +139,9 @@ class FlappyBird:
                 
                 # Recalculate scale factor and sizes
                 self.scale_factor = min(self.screen_width, self.screen_height) / 800
-                self.bird_size = int(40 * self.scale_factor)
-                self.pipe_width = int(80 * self.scale_factor)
-                self.gap_height = int(200 * self.scale_factor)
+                self.bird_size = int(50 * self.scale_factor)
+                self.pipe_width = int(70 * self.scale_factor)
+                self.gap_height = int(180 * self.scale_factor)
                 
                 # Rescale images
                 self.bird_image = pygame.transform.scale(
@@ -273,10 +273,10 @@ class FlappyBird:
     def check_collision(self, pipe):
         # Create a simplified hitbox for the bird
         bird_rect = pygame.Rect(
-            self.bird_x, 
-            self.bird_y, 
-            self.bird_size * 0.8,  # Make hitbox slightly smaller than image
-            self.bird_size * 0.8
+            self.bird_x + self.bird_size * 0.1,  # Offset slightly
+            self.bird_y + self.bird_size * 0.1,  # Offset slightly
+            self.bird_size * 0.7,  # Even smaller hitbox (70% of visual size)
+            self.bird_size * 0.7
         )
         
         # Create hitboxes for top and bottom pipes
