@@ -6,6 +6,7 @@ from games.tetris import Tetris
 from games.tank import Tank
 from games.contra import Contra
 from games.pokemon import Pokemon
+from games.flappy_bird import FlappyBird
 
 class MainMenu:
     def __init__(self, screen, screen_size=(800, 800)):
@@ -41,7 +42,8 @@ class MainMenu:
             "pacman": (button_x_offset, button_spacing * 7),  # Adjusted for better fit
             "contra": (self.screen_size[0] // 1.5, button_spacing * 1),
             "pokemon": (self.screen_size[0] // 1.5, button_spacing * 3),
-            "tank": (self.screen_size[0] // 1.5, button_spacing * 5)
+            "tank": (self.screen_size[0] // 1.5, button_spacing * 5),
+            "flappy_bird": (self.screen_size[0] // 1.5, button_spacing * 7) # New flappy bird position
         }
 
     def load_assets(self):
@@ -53,6 +55,7 @@ class MainMenu:
             "contra": pygame.image.load('assets/contra/contra.png'),
             "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
             "pacman": pygame.image.load('assets/pacman/pacman.png'),
+            "flappy_bird": pygame.image.load('assets/pokemon/abra.png'), # Add flappy bird icon
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }
@@ -152,7 +155,8 @@ class MainMenu:
                     "contra": Contra,
                     "pokemon": Pokemon,
                     "tank": Tank,
-                    "pacman": PacmanGame
+                    "pacman": PacmanGame,
+                    "flappy_bird": FlappyBird # Add flappy bird game class
                 }[key])
                 break
 

@@ -19,6 +19,7 @@ TODO:
 * tetris
     * more complex shapes?
 * flappy_bird
+    * assets special for it (bird, pipe, sound effects, etc)
 * contra
 * pokemon 
     * can be a seperate bigger game (something like a mini pokemon vortex??)
