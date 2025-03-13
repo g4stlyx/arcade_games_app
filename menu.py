@@ -1,4 +1,5 @@
 import pygame
+from games.bomberman import Bomberman
 from games.pacman import PacmanGame
 from games.space_invaders import SpaceInvaders
 from games.snake import Snake
@@ -43,7 +44,8 @@ class MainMenu:
             "contra": (self.screen_size[0] // 1.5, button_spacing * 1),
             "pokemon": (self.screen_size[0] // 1.5, button_spacing * 3),
             "tank": (self.screen_size[0] // 1.5, button_spacing * 5),
-            "flappy_bird": (self.screen_size[0] // 1.5, button_spacing * 7) # New flappy bird position
+            "flappy_bird": (self.screen_size[0] // 1.5, button_spacing * 7), # New flappy bird position
+            "bomberman": (self.screen_size[0] // 1.5, button_spacing * 9)  # New bomberman position
         }
 
     def load_assets(self):
@@ -56,6 +58,7 @@ class MainMenu:
             "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
             "pacman": pygame.image.load('assets/pacman/pacman.png'),
             "flappy_bird": pygame.image.load('assets/flappy_bird/bird.png'),
+            "bomberman": pygame.image.load('assets/bomberman/fire_alchemist.jpg'),
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }
@@ -156,7 +159,8 @@ class MainMenu:
                     "pokemon": Pokemon,
                     "tank": Tank,
                     "pacman": PacmanGame,
-                    "flappy_bird": FlappyBird # Add flappy bird game class
+                    "flappy_bird": FlappyBird,
+                    "bomberman": Bomberman
                 }[key])
                 break
 

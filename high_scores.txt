@@ -1,5 +1,6 @@
 snake: 9
 space_invaders: 46
 pacman: 76
-tetris: 800
-flappy_bird: 7
+tetris: 1100
+flappy_bird: 10
+bomberman: 20
