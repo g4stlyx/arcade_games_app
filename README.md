@@ -7,6 +7,8 @@
 ### Todo:
 * general:
     * app icon
+    * assets could be gotten once(in one picture, i forgot the name), and divided then for optimization and less memory(cache) load.
+    * OpenGL could be used for more advanced stuff alongside to the Pygame.
 * space_invaders:
     * better images/sound effects
     * maybe leaving values of #enemies, enemy_speed etc. to the user. (config file)

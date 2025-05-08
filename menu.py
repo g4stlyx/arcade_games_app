@@ -1,12 +1,8 @@
 import pygame
-from games.bomberman import Bomberman
 from games.pacman import PacmanGame
 from games.space_invaders import SpaceInvaders
 from games.snake import Snake
 from games.tetris import Tetris
-from games.tank import Tank
-from games.contra import Contra
-from games.pokemon import Pokemon
 from games.flappy_bird import FlappyBird
 
 class MainMenu:
@@ -34,18 +30,16 @@ class MainMenu:
 
     def update_positions(self):
         # Adjusted positions based on screen size for better alignment
-        button_spacing = self.screen_size[1] // 10  # Space between buttons
-        button_x_offset = self.screen_size[0] // 5  # X position for left-aligned buttons (adjusted further left)
+        button_spacing = self.screen_size[1] // 8  # Adjusted spacing for fewer items
+        button_x_left = self.screen_size[0] // 5 
+        button_x_right = self.screen_size[0] // 1.5 
+        
         self.positions = {
-            "space_invaders": (button_x_offset, button_spacing * 1),
-            "snake": (button_x_offset, button_spacing * 3),
-            "tetris": (button_x_offset, button_spacing * 5),
-            "pacman": (button_x_offset, button_spacing * 7),  # Adjusted for better fit
-            "contra": (self.screen_size[0] // 1.5, button_spacing * 1),
-            "pokemon": (self.screen_size[0] // 1.5, button_spacing * 3),
-            "tank": (self.screen_size[0] // 1.5, button_spacing * 5),
-            "flappy_bird": (self.screen_size[0] // 1.5, button_spacing * 7), # New flappy bird position
-            "bomberman": (self.screen_size[0] // 1.5, button_spacing * 9)  # New bomberman position
+            "space_invaders": (button_x_left, button_spacing * 2),
+            "snake": (button_x_left, button_spacing * 4),
+            "tetris": (button_x_left, button_spacing * 6),
+            "pacman": (button_x_right, button_spacing * 2),
+            "flappy_bird": (button_x_right, button_spacing * 4),
         }
 
     def load_assets(self):
@@ -53,12 +47,8 @@ class MainMenu:
             "space_invaders": pygame.image.load('assets/space_invaders/space_invaders2.png'),
             "snake": pygame.image.load('assets/snake/slytherin.gif'),
             "tetris": pygame.image.load('assets/tetris/tetris.png'),
-            "tank": pygame.image.load('assets/tank/tank.png'),
-            "contra": pygame.image.load('assets/contra/contra.png'),
-            "pokemon": pygame.image.load('assets/pokemon/gengar.png'),
             "pacman": pygame.image.load('assets/pacman/pacman.png'),
             "flappy_bird": pygame.image.load('assets/flappy_bird/bird.png'),
-            "bomberman": pygame.image.load('assets/bomberman/fire_alchemist.jpg'),
             "music_on": pygame.image.load('assets/sound_effects/music_on.png'),
             "music_off": pygame.image.load('assets/sound_effects/music_off.png'),
         }
@@ -151,17 +141,15 @@ class MainMenu:
         # Check for game icon clicks
         for key, pos in self.positions.items():
             if pos[0] <= mouse_pos[0] <= pos[0] + self.image_size[0] and pos[1] <= mouse_pos[1] <= pos[1] + self.image_size[1]:
-                self.start_game({
+                game_map = {
                     "space_invaders": SpaceInvaders,
                     "snake": Snake,
                     "tetris": Tetris,
-                    "contra": Contra,
-                    "pokemon": Pokemon,
-                    "tank": Tank,
                     "pacman": PacmanGame,
                     "flappy_bird": FlappyBird,
-                    "bomberman": Bomberman
-                }[key])
+                }
+                if key in game_map: # Check if the key is still in our active games
+                    self.start_game(game_map[key])
                 break
 
         # Check music icon click (responsive position)
